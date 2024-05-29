@@ -139,7 +139,9 @@ Data_loading <- function(Candidate_Gene_file_path, Candidate_Peak_file_path,
 
 #' Build candidate circuits
 #'
-#' This function constructs candidate circuits based on the input data WITH TAD prior. See also `Candidate_circuits_construction_without_TAD`
+#' This function constructs candidate circuits based on the input data WITH TAD prior.
+#'
+#' @seealso [Candidate_circuits_construction_without_TAD()] for the version WITHOUT TAD.
 #'
 #' @param loaded_data The output from `Data_loading`
 #' @param TAD_file_path The path to the TAD prior file
@@ -339,7 +341,9 @@ Candidate_circuits_construction_with_TAD <- function(loaded_data, TAD_file_path)
 
 #' Build candidate circuits
 #'
-#' This function constructs candidate circuits based on the input data WITHOUT TAD prior. See also `Candidate_circuits_construction_with_TAD`
+#' This function constructs candidate circuits based on the input data WITHOUT TAD prior.
+#'
+#' @seealso [Candidate_circuits_construction_with_TAD()] for the version WITH TAD.
 #'
 #' @param loaded_data The output from `Data_loading`
 #' @param distance_control Bp threshold for paring peaks and genes

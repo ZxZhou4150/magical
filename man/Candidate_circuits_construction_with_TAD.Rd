@@ -25,5 +25,8 @@ A list named "Candidate_circuits" containing the following elements:
 }
 }
 \description{
-This function constructs candidate circuits based on the input data WITH TAD prior. See also \code{Candidate_circuits_construction_without_TAD}
+This function constructs candidate circuits based on the input data WITH TAD prior.
+}
+\seealso{
+\code{\link[=Candidate_circuits_construction_without_TAD]{Candidate_circuits_construction_without_TAD()}} for the version WITHOUT TAD.
 }
