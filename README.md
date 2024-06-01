@@ -2,7 +2,9 @@
 
 MAGICAL (Multiome Accessible Gene Integration Calling And Looping) is a hierarchical Bayesian approach that leverages paired scRNA-seq and scATAC-seq data from different conditions to map disease-associated transcription factors, chromatin sites, and genes as regulatory circuits. By simultaneously modeling signal variation across cells and conditions in both omics data types, MAGICAL achieved high accuracy on circuit inference. 
 
-[R](https://github.com/xichensf/magical/tree/R-package) and [MATLAB](https://github.com/xichensf/magical/tree/main/MATLAB) scripts are provided for the use of MAGICAL with R v4.0.0 or MATLAB 2020a or later. The complete single cell data files are over 100GB and also the Bayesian learning process in MAGICAL may take hours to run on a local machine. Before working on a complete dataset, we suggest users to download [our demo dataset](https://drive.google.com/file/d/1CerwMHMnS1PNFNMy00OoHQjn6T30M1j4/view?usp=sharing) to get familiar with MAGICAL functions (running time ~15 mins).
+[R](https://github.com/Zxzhou4150/magical/tree/R-package) and [MATLAB](https://github.com/xichensf/magical/tree/main/MATLAB) scripts are provided for the use of MAGICAL with R v4.0.0 or MATLAB 2020a or later. The complete single cell data files are over 100GB and also the Bayesian learning process in MAGICAL may take hours to run on a local machine. Before working on a complete dataset, we suggest users to download [our demo dataset](https://drive.google.com/file/d/1CerwMHMnS1PNFNMy00OoHQjn6T30M1j4/view?usp=sharing) to get familiar with MAGICAL functions (running time ~15 mins). The R vignette is below and can also be viewed through `browseVignettes("magical")` after installing with `devtools::install_github("Zxzhou4150/magical/tree/R-package", build_vignettes = T)`. 
+
+```diff
 
 ![alt text](https://github.com/xichensf/magical/blob/main/MAGICAL.png)
 
