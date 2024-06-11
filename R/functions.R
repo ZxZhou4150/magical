@@ -9,18 +9,18 @@
 #' @param Ref_seq_file_path path to the Refseq file for transcription starting site extraction
 #'
 #' @return A list named "loaded_data" containing the following elements:
-#' - Common_samples: a vector of common samples between scRNA and scATAC data
-#' - Candidate_Genes: a data frame of candidate genes
-#' - Candidate_Peaks: a data frame of candidate peaks
-#' - scRNA_Genes: a data frame of scRNA genes
-#' - scRNA_cells: a data frame of scRNA cells
-#' - scRNA_read_count_matrix: a sparse matrix of scRNA read counts
-#' - scATAC_Peaks: a data frame of scATAC peaks
-#' - scATAC_cells: a data frame of scATAC cells
-#' - scATAC_read_count_matrix: a sparse matrix of scATAC read counts
-#' - Motifs: a data frame of TF motifs
-#' - TF_peak_binding_matrix: a sparse matrix of TF binding on ATAC peaks
-#' - Refseq: a data frame of Refseq
+#' * Common_samples: a vector of common samples between scRNA and scATAC data
+#' * Candidate_Genes: a data frame of candidate genes
+#' * Candidate_Peaks: a data frame of candidate peaks
+#' * scRNA_Genes: a data frame of scRNA genes
+#' * scRNA_cells: a data frame of scRNA cells
+#' * scRNA_read_count_matrix: a sparse matrix of scRNA read counts
+#' * scATAC_Peaks: a data frame of scATAC peaks
+#' * scATAC_cells: a data frame of scATAC cells
+#' * scATAC_read_count_matrix: a sparse matrix of scATAC read counts
+#' * Motifs: a data frame of TF motifs
+#' * TF_peak_binding_matrix: a sparse matrix of TF binding on ATAC peaks
+#' * Refseq: a data frame of Refseq
 #'
 #' @export
 
@@ -147,14 +147,14 @@ Data_loading <- function(Candidate_Gene_file_path, Candidate_Peak_file_path,
 #' @param TAD_file_path The path to the TAD prior file
 #'
 #' @return A list named "Candidate_circuits" containing the following elements:
-#' - TFs: candidate TFs
-#' - TF_log2Count: log2 transformed TF expression
-#' - Peaks: candidate peaks
-#' - Peak_log2Count: log2 transformed peak accessibility
-#' - Genes: candidate genes
-#' - Gene_log2Count: log2 transformed gene expression
-#' - TF_peak_binding: TF-peak binding matrix
-#' - Peak_Gene_looping: peak-gene looping matrix
+#' * TFs: candidate TFs
+#' * TF_log2Count: log2 transformed TF expression
+#' * Peaks: candidate peaks
+#' * Peak_log2Count: log2 transformed peak accessibility
+#' * Genes: candidate genes
+#' * Gene_log2Count: log2 transformed gene expression
+#' * TF_peak_binding: TF-peak binding matrix
+#' * Peak_Gene_looping: peak-gene looping matrix
 #'
 #' @export
 
@@ -349,14 +349,14 @@ Candidate_circuits_construction_with_TAD <- function(loaded_data, TAD_file_path)
 #' @param distance_control Bp threshold for paring peaks and genes
 #'
 #' @return A list named "Candidate_circuits" containing the following elements:
-#' - TFs: candidate TFs
-#' - TF_log2Count: log2 transformed TF expression
-#' - Peaks: candidate peaks
-#' - Peak_log2Count: log2 transformed peak accessibility
-#' - Genes: candidate genes
-#' - Gene_log2Count: log2 transformed gene expression
-#' - TF_peak_binding: TF-peak binding matrix
-#' - Peak_Gene_looping: peak-gene looping matrix
+#' * TFs: candidate TFs
+#' * TF_log2Count: log2 transformed TF expression
+#' * Peaks: candidate peaks
+#' * Peak_log2Count: log2 transformed peak accessibility
+#' * Genes: candidate genes
+#' * Gene_log2Count: log2 transformed gene expression
+#' * TF_peak_binding: TF-peak binding matrix
+#' * Peak_Gene_looping: peak-gene looping matrix
 #'
 #' @export
 Candidate_circuits_construction_without_TAD <- function(loaded_data, distance_control){
@@ -913,9 +913,9 @@ Peak_gene_binary_looping_L_state_samping <- function(R, R_sample, RNA_Cell_Sampl
 #' @param iteration_num The number of iterations
 #'
 #' @return A list named "Circuits_linkage_posterior" containing the following elements:
-#' - TF_Peak_Binding_prob: The posterior probability of TF binding to peaks
-#' - Peak_Gene_Looping_prob: The posterior probability of looping between peaks and genes
-#' - Noise_parameters: The posterior noise parameters
+#' * TF_Peak_Binding_prob: The posterior probability of TF binding to peaks
+#' * Peak_Gene_Looping_prob: The posterior probability of looping between peaks and genes
+#' * Noise_parameters: The posterior noise parameters
 #'
 #' @export
 
