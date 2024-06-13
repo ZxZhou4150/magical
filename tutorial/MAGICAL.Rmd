@@ -157,7 +157,7 @@ Circuits_linkage_posterior<-MAGICAL_estimation(loaded_data, Candidate_circuits, 
 
 
 ## MAGICAL output
-Finally, optimized circuits fitting the variation in both modalities are selected. Circuit genes, associated chromatin sites and the regulatory TFs will be written to "MAGICAL_selected_regulatory_circuits.txt". MAGICAL uses default thresholds (posterior probabilities on TF-peak binding and peak-gene looping) for circuit selection. Users can adjust these thresholds in the provided scripts to allow more or fewer outputs. 
+Finally, optimized circuits fitting the variation in both modalities are selected. Circuit genes, associated chromatin sites and the regulatory TFs will be written to [MAGICAL_selected_regulatory_circuits.txt](tutorial/MAGICAL_selected_regulatory_circuits.txt). MAGICAL uses default thresholds (posterior probabilities on TF-peak binding and peak-gene looping) for circuit selection. Users can adjust these thresholds in the provided scripts to allow more or fewer outputs. 
 
 Note: running MAGICAL on our demo files may return very similar but slightly different results to the example output file we provided due the nature of Bayesian algorithm.
 
