@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+
+<title>MAGICAL visualization</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">MAGICAL visualization</h1>
+
+
+
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(magical)</span></code></pre></div>
+<div id="magical-visualzation" class="section level1">
+<h1>MAGICAL visualzation</h1>
+<p>MAGICAL offers several ways of visualizing circuits, all of which
+make use of the package <code>karyoploteR</code> and
+<code>regioneR</code>.</p>
+<div id="read-the-results" class="section level2">
+<h2>Read the results</h2>
+<p>Let’s start by reading the results from the MAGICAL analysis,
+“MAGICAL_selected_regulatory_circuits.txt”. We suggest running this demo
+with our <a href="%22MAGICAL_selected_regulatory_circuits.txt%22">provided file</a>,
+because as mentioned before, running MAGICAL can return very similar but
+slightly different results each time.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="co"># read the results</span></span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>data <span class="ot">=</span> <span class="fu">read.table</span>(<span class="st">&#39;MAGICAL_selected_regulatory_circuits.txt&#39;</span>, <span class="at">header =</span> T, <span class="at">sep =</span> <span class="st">&quot;</span><span class="sc">\t</span><span class="st">&quot;</span>)</span></code></pre></div>
+</div>
+<div id="visualize-the-circuits" class="section level2">
+<h2>Visualize the circuits</h2>
+<p>MAGICAL offers 3 ways of visualizing the circuits: by circuit index,
+gene, or peak. For either of these ways, MAGICAL will plot a certain
+region of one chromosome which includes the circuit(s). Basically, the
+following information will be manifested on the plot:</p>
+<ul>
+<li>The chromosome id and coverage of the region</li>
+<li>The <em>starting site</em> of the gene</li>
+<li>The starting site and ending site of the peak</li>
+<li>The top 3 (or less if there are less than 3) TFs that are most
+likely to bind to the peak.</li>
+</ul>
+<p>Also, see the <a href="#advanced-option">advanced option</a> section
+for an advanced visualization option.</p>
+<div id="visualize-by-circuit-index" class="section level3">
+<h3>visualize by circuit index</h3>
+<p>With function <code>plot_circuits_with_idx</code>, you can visualize
+one circuit by its index.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="co"># visualize the first circuit</span></span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a><span class="fu">plot_circuits_with_idx</span>(data, <span class="at">idx =</span> <span class="dv">1</span>)</span></code></pre></div>
+<p><img role="img" src="data:image/png;base64,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" /><!-- --></p>
+</div>
+<div id="visualize-by-gene" class="section level3">
+<h3>visualize by gene</h3>
+<p>With function <code>plot_circuits_with_gene</code>, you can visualize
+all circuits that contain a specific gene.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="co"># visualize circuits with gene ACOT11</span></span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a><span class="fu">plot_circuits_with_gene</span>(data, <span class="at">gene =</span> <span class="st">&quot;ACOT11&quot;</span>)</span></code></pre></div>
+<p><img role="img" src="data:image/png;base64,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" /><!-- --></p>
+</div>
+<div id="visualize-by-peak" class="section level3">
+<h3>visualize by peak</h3>
+<p>With function <code>plot_circuits_with_peak</code>, you can visualize
+all circuits that contain a specific peak.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="co"># visualize circuits with peak chr4:184817550-184818412</span></span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a><span class="fu">plot_circuits_with_peak</span>(data, <span class="at">peak_chr =</span> <span class="st">&quot;chr4&quot;</span>, <span class="at">peak_start =</span> <span class="dv">184817550</span>, <span class="at">peak_end =</span> <span class="dv">184818412</span>)</span></code></pre></div>
+<p><img role="img" src="data:image/png;base64,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" /><!-- --></p>
+</div>
+</div>
+<div id="advanced-option" class="section level2">
+<h2>Advanced option</h2>
+<p>All the 3 functions offer an advanced option, which allows you to see
+all the genes around the circuit region. This is useful if you want to
+see the specificity of the circuit(s) in the context of the whole
+region, which is, the other genes in that region are not involved in the
+circuit(s).</p>
+<p>This can be done by setting the parameter <code>gene_track</code> to
+<code>TRUE</code> (default is <code>FALSE</code>). After that, you need
+another parameter, <code>TxDb</code>, to specify the reference genome
+from which the function will query genes. Before that, you must download
+the corresponding TXDb package from Bioconductor. For example, if your
+reference genome is hg38, you need to download the package
+<code>TxDb.Hsapiens.UCSC.hg38.knownGene</code>.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="do">## Here our reference genome is hg38</span></span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a></span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a><span class="co"># if (!require(&quot;BiocManager&quot;, quietly = TRUE))</span></span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a><span class="co">#     install.packages(&quot;BiocManager&quot;)</span></span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a><span class="co"># </span></span>
+<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a><span class="co"># BiocManager::install(&quot;TxDb.Hsapiens.UCSC.hg38.knownGene&quot;)</span></span>
+<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a></span>
+<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a><span class="fu">library</span>(TxDb.Hsapiens.UCSC.hg38.knownGene)</span>
+<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a></span>
+<span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a><span class="co"># visualize the first circuit with gene track</span></span>
+<span id="cb6-11"><a href="#cb6-11" tabindex="-1"></a><span class="fu">plot_circuits_with_idx</span>(data, <span class="dv">1</span> , T, TxDb.Hsapiens.UCSC.hg38.knownGene)</span></code></pre></div>
+<p><img role="img" src="data:image/png;base64,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" /><!-- --></p>
+</div>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

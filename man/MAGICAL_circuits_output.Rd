@@ -24,7 +24,7 @@ MAGICAL_circuits_output(
 \item{prob_threshold_peak_gene_looping}{The threshold of peak-gene looping probability. Default is 0.95}
 }
 \value{
-A file with the format: Gene_symbol - Gene_chr - Gene_TSS - Peak_chr - Peak_start - Peak_end - Looping_prob - TFs(binding prob)
+There is no return value for this function, but it will write a file with this format: Gene_symbol - Gene_chr - Gene_TSS - Peak_chr - Peak_start - Peak_end - Looping_prob - TFs(binding prob)
 }
 \description{
 MAGICAL output
