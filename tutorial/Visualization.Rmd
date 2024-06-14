@@ -25,7 +25,7 @@ MAGICAL offers several ways of visualizing circuits, all of which make use of th
 
 ## Read the results
 
-Let's start by reading the results from the MAGICAL analysis, "MAGICAL_selected_regulatory_circuits.txt". We suggest running this demo with our [provided file]("MAGICAL_selected_regulatory_circuits.txt"), because as mentioned before, running MAGICAL can return very similar but slightly different results each time.
+Let's start by reading the results from the MAGICAL analysis, "MAGICAL_selected_regulatory_circuits.txt". We suggest running this demo with our [provided file](MAGICAL_selected_regulatory_circuits.txt), because as mentioned before, running MAGICAL can return very similar but slightly different results each time.
 
 ```{r}
 # read the results
