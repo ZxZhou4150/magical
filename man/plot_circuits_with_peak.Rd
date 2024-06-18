@@ -9,8 +9,10 @@ plot_circuits_with_peak(
   peak_chr,
   peak_start,
   peak_end,
-  gene_track = F,
-  TxDb
+  gene_track = T,
+  TxDb,
+  peak_track = T,
+  peaks
 )
 }
 \arguments{
@@ -22,9 +24,13 @@ plot_circuits_with_peak(
 
 \item{peak_end}{The end position of the peak.}
 
-\item{gene_track}{Whether to plot gene tracks around the region or not. Default is \code{FALSE}.}
+\item{gene_track}{Whether to plot gene tracks around the region or not. Default is \code{TRUE}.}
 
 \item{TxDb}{The TxDb object corresponding to the reference genome. Required if \code{gene_track} is \code{TRUE}.}
+
+\item{peak_track}{Whether to plot peak tracks around the region or not. Default is \code{TRUE}.}
+
+\item{peaks}{The data frame containing the peaks. It should contain 3 columns: the chromosome, start, and end of the peaks. Required if \code{peak_track} is \code{TRUE}.}
 }
 \value{
 A karyoploteR plot.
@@ -33,9 +39,13 @@ A karyoploteR plot.
 This function plots all circuits containing one certain peak.
 }
 \examples{
-#library("TxDb.Hsapiens.UCSC.hg38.knownGene")
-#data = read.table("MAGICAL_selected_regulatory_circuits.txt", header = T, sep = "\t")
-#plot_circuits_with_peak(data,"chr4", 184817550, 184818412, T, TxDb.Hsapiens.UCSC.hg38.knownGene)
+# data = read.table("MAGICAL_selected_regulatory_circuits.txt", header = T, sep = "\t")
+#
+# library("TxDb.Hsapiens.UCSC.hg38.knownGene")
+#
+# peaks = read.table('Demo input files/scATAC peaks.txt', header = F, sep = "\t")
+#
+# plot_circuits_with_peak(data, peak_chr = "chr4", peak_start = 184817550, peak_end = 184818412, gene_track = T, TxDb.Hsapiens.UCSC.hg38.knownGene, peak_track = T, peaks)
 
 }
 \seealso{

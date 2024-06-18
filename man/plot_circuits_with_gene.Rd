@@ -4,16 +4,27 @@
 \alias{plot_circuits_with_gene}
 \title{Plot circuit(s)}
 \usage{
-plot_circuits_with_gene(data, gene, gene_track = F, TxDb)
+plot_circuits_with_gene(
+  data,
+  gene,
+  gene_track = T,
+  TxDb,
+  peak_track = T,
+  peaks
+)
 }
 \arguments{
 \item{data}{The data frame written by \code{\link[=MAGICAL_circuits_output]{MAGICAL_circuits_output()}}.}
 
 \item{gene}{The gene symbol.}
 
-\item{gene_track}{Whether to plot gene tracks around the region or not. Default is \code{FALSE}.}
+\item{gene_track}{Whether to plot gene tracks around the region or not. Default is \code{TRUE}.}
 
 \item{TxDb}{The TxDb object corresponding to the reference genome. Required if \code{gene_track} is \code{TRUE}.}
+
+\item{peak_track}{Whether to plot peak tracks around the region or not. Default is \code{TRUE}.}
+
+\item{peaks}{The data frame containing the peaks. It should contain 3 columns: the chromosome, start, and end of the peaks. Required if \code{peak_track} is \code{TRUE}.}
 }
 \value{
 A karyoploteR plot.
@@ -22,9 +33,13 @@ A karyoploteR plot.
 This function plots all circuits containing one certain gene.
 }
 \examples{
-#library("TxDb.Hsapiens.UCSC.hg38.knownGene")
-#data = read.table("MAGICAL_selected_regulatory_circuits.txt", header = T, sep = "\t")
-#plot_circuits_with_gene(data, "ACOT11", T, TxDb.Hsapiens.UCSC.hg38.knownGene)
+# data = read.table("MAGICAL_selected_regulatory_circuits.txt", header = T, sep = "\t")
+#
+# library("TxDb.Hsapiens.UCSC.hg38.knownGene")
+#
+# peaks = read.table('Demo input files/scATAC peaks.txt', header = F, sep = "\t")
+#
+# plot_circuits_with_gene(data, gene = "ACOT11", gene_track = T, TxDb.Hsapiens.UCSC.hg38.knownGene, peak_track = T, peaks)
 
 }
 \seealso{

@@ -20,7 +20,7 @@ library(magical)
 
 # MAGICAL visualzation
 
-MAGICAL offers several ways of visualizing circuits, all of which make use of the package `karyoploteR` and `regioneR`.
+MAGICAL offers several ways of visualizing circuits, all of which make use of the package `karyoploteR`.
 
 
 ## Read the results
@@ -29,10 +29,10 @@ Let's start by reading the results from the MAGICAL analysis, "MAGICAL_selected_
 
 ```{r}
 # read the results
-data = read.table('MAGICAL_selected_regulatory_circuits.txt', header = T, sep = "\t")
+data <- read.table("MAGICAL_selected_regulatory_circuits.txt", header = T, sep = "\t")
 ```
 
-## Visualize the circuits
+## Basic visualization
 
 MAGICAL offers 3 ways of visualizing the circuits: by circuit index, gene, or peak. For either of these ways, MAGICAL will plot a certain region of one chromosome which includes the circuit(s). Basically, the following information will be manifested on the plot:
 
@@ -41,7 +41,7 @@ MAGICAL offers 3 ways of visualizing the circuits: by circuit index, gene, or pe
   * The starting site and ending site of the peak
   * The top 3 (or less if there are less than 3) TFs that are most likely to bind to the peak.
   
-Also, see the [advanced option](#advanced-option) section for an advanced visualization option.
+Also, see the [advanced options](#advanced-options) section for the advanced visualization option of gene and peak track. For this section, we are not showing them.
   
 
 ### visualize by circuit index
@@ -50,7 +50,7 @@ With function `plot_circuits_with_idx`, you can visualize one circuit by its ind
 
 ```{r, fig.width=7, fig.height=4}
 # visualize the first circuit
-plot_circuits_with_idx(data, idx = 1)
+plot_circuits_with_idx(data, idx = 1, gene_track = F, peak_track = F)
 ```
 
 ### visualize by gene
@@ -59,7 +59,7 @@ With function `plot_circuits_with_gene`, you can visualize all circuits that con
 
 ```{r, fig.width=7, fig.height=4}
 # visualize circuits with gene ACOT11
-plot_circuits_with_gene(data, gene = "ACOT11")
+plot_circuits_with_gene(data, gene = "ACOT11", gene_track = F, peak_track = F)
 ```
 
 
@@ -69,15 +69,17 @@ With function `plot_circuits_with_peak`, you can visualize all circuits that con
 
 ```{r, fig.width=7, fig.height=4}
 # visualize circuits with peak chr4:184817550-184818412
-plot_circuits_with_peak(data, peak_chr = "chr4", peak_start = 184817550, peak_end = 184818412)
+plot_circuits_with_peak(data, peak_chr = "chr4", peak_start = 184817550, peak_end = 184818412, gene_track = F, peak_track = F)
 ```
 
 
-## Advanced option
+## Advanced options
 
-All the 3 functions offer an advanced option, which allows you to see all the genes around the circuit region. This is useful if you want to see the specificity of the circuit(s) in the context of the whole region, which is, the other genes in that region are not involved in the circuit(s). 
+All the 3 functions offer an advanced options, which allows you to see **all the genes and peaks** around the circuit region. This is useful if you want to see the specificity of the circuit(s) in the context of the whole region, which is, the other genes/peaks are not involved in the circuit(s). 
 
-This can be done by setting the parameter `gene_track` to `TRUE` (default is `FALSE`). After that, you need another parameter, `TxDb`, to specify the reference genome from which the function will query genes. Before that, you must download the corresponding TXDb package from Bioconductor. For example, if your reference genome is hg38, you need to download the package `TxDb.Hsapiens.UCSC.hg38.knownGene`.
+### Gene track
+
+Gene track can be visualized by setting the parameter `gene_track` to `TRUE` (default). After that, you need another parameter, `TxDb`, to specify the reference genome from which the function will query genes. Before that, you must download the corresponding TXDb package from Bioconductor. For example, if your reference genome is hg38, you need to download the package `TxDb.Hsapiens.UCSC.hg38.knownGene`.
 
 
 ```{r, fig.width=7, fig.height=4, warning=FALSE, message=FALSE}
@@ -85,11 +87,34 @@ This can be done by setting the parameter `gene_track` to `TRUE` (default is `FA
 
 # if (!require("BiocManager", quietly = TRUE))
 #     install.packages("BiocManager")
-# 
+#
 # BiocManager::install("TxDb.Hsapiens.UCSC.hg38.knownGene")
 
 library(TxDb.Hsapiens.UCSC.hg38.knownGene)
 
 # visualize the first circuit with gene track
-plot_circuits_with_idx(data, 1 , T, TxDb.Hsapiens.UCSC.hg38.knownGene)
+plot_circuits_with_idx(data, 1, gene_track = T, TxDb = TxDb.Hsapiens.UCSC.hg38.knownGene, peak_track = F)
+```
+
+### Peak track
+
+By setting the parameter `gene_track` to `TRUE` (default), you can see the density of peaks around the region. You also need another input, `peaks`, which contains the chromosome, start, and end of the peaks. File "scATAC peaks.txt" in our [demo data](https://drive.google.com/file/d/1CerwMHMnS1PNFNMy00OoHQjn6T30M1j4/view?usp=sharing) provides an example.
+
+```{r, fig.width=7, fig.height=4, warning=FALSE, message=FALSE}
+# read the peaks
+scATAC_peak_file_path <- "Demo input files/scATAC peaks.txt"
+peaks <- read.table(scATAC_peak_file_path, header = F, sep = "\t")
+
+head(peaks)
+```
+
+```{r, fig.width=7, fig.height=4, warning=FALSE, message=FALSE}
+# visualize the first circuit with peak track
+plot_circuits_with_idx(data, 1, gene_track = F, peak_track = T, peaks = peaks[, 2:4])
+```
+
+Now let's put both gene and peak tracks together.
+
+```{r, fig.width=7, fig.height=4, warning=FALSE, message=FALSE}
+plot_circuits_with_idx(data, 1, TxDb = TxDb.Hsapiens.UCSC.hg38.knownGene, peaks = peaks[, 2:4])
 ```

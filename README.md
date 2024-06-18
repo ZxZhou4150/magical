@@ -17,8 +17,15 @@ The R package "MAGICAL" can be simply installed by:
 devtools::install_github("ZxZhou4150/magical")
 ```
 
+Or:
+
+```{r}
+# install.packages("remotes")
+remotes::install_github("ZxZhou4150/magical")
+```
+
 ## Demo
-Before working on a complete dataset, we suggest users to download [our demo dataset](https://drive.google.com/file/d/1CerwMHMnS1PNFNMy00OoHQjn6T30M1j4/view?usp=sharing) and go through the demo tutorial for analysis ([R markdown](tutorial/MAGICAL.Rmd) and the [html page](https://zxzhou4150.github.io/MAGICAL.html)) and visualization ([R markdown](tutorial/Visualization.Rmd) and the [html page](https://zxzhou4150.github.io/Visualization.html)) to get familiar with MAGICAL functions (running time ~15 mins in total).
+Before working on a complete dataset, we suggest users to download [our demo dataset](https://drive.google.com/file/d/1CerwMHMnS1PNFNMy00OoHQjn6T30M1j4/view?usp=sharing) and go through the demo tutorial for analysis ([R markdown](tutorial/MAGICAL.Rmd) and the [html page](https://zxzhou4150.github.io/MAGICAL.html)) and visualization ([R markdown](tutorial/Visualization.Rmd) and the [html page](https://zxzhou4150.github.io/Visualization.html)) to get familiar with MAGICAL functions (running time ~15 mins in total). Also, you can see [here](tutorial/magical_1.1.0.pdf) for the full documentation of all functions.
 
 
 ## Human PBMC single cell multiomics data
