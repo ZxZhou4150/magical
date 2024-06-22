@@ -57,11 +57,14 @@ plot_circuits_with_idx(data, idx = 1, gene_track = F, peak_track = F)
 
 With function `plot_circuits_with_gene`, you can visualize all circuits that contain a specific gene.
 
-```{r, fig.width=7, fig.height=4}
+```{r, fig.width=8, fig.height=4}
 # visualize circuits with gene ACOT11
 plot_circuits_with_gene(data, gene = "ACOT11", gene_track = F, peak_track = F)
 ```
-
+```{r, fig.width=8, fig.height=4}
+# visualize circuits with gene ASAP3
+plot_circuits_with_gene(data, gene = "ASAP3", gene_track = F, peak_track = F)
+```
 
 ### visualize by peak
 

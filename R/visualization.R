@@ -83,15 +83,15 @@ plot_circuits_with_idx <- function(data, idx, gene_track = T, TxDb, peak_track =
   karyoploteR::kpText(kp, labels = paste0("peak ", chr, ":", data_toplot$Peak_start, "-", data_toplot$Peak_end), chr = chr, x = (data_toplot$Peak_start + data_toplot$Peak_end) / 2, y = 0.65, col = "black", cex = 0.6)
   karyoploteR::kpArrows(kp, chr = chr, x0 = (data_toplot$Peak_start + data_toplot$Peak_end) / 2, x1 = (data_toplot$Peak_start + data_toplot$Peak_end) / 2, y0 = 0.5, y1 = 0.4, length = 0.05)
 
+  # labels <- paste0("peak ", data_toplot$Peak_chr, ":", data_toplot$Peak_start, "-", data_toplot$Peak_end)
+  # peak_marker <- data.frame(chr = data_toplot$Peak_chr, pos = (data_toplot$Peak_start + data_toplot$Peak_end) / 2,labels = labels)
+  # karyoploteR::kpPlotMarkers(kp,chr = peak_marker$chr, x = peak_marker$pos, y = 0.65, labels = peak_marker$labels,text.orientation = "horizontal",adjust.label.position = T, line.color = "white", cex = 0.6)
+
   ### top TF(s)
   TF_binding_prob <- data_toplot[, "TFs.binding.prob."]
   TFs <- gsub("\\(.*?\\)", "", strsplit(TF_binding_prob, ",\\s*")[[1]])
   TFs <- TFs[TFs != ""]
-  if (length(TFs) >= 3) {
-    karyoploteR::kpText(kp, labels = paste0("top TF(s): ", paste(head(TFs, 3), collapse = " ")), chr = chr, x = (data_toplot$Peak_start + data_toplot$Peak_end) / 2, y = 0.55, col = "black", cex = 0.6)
-  } else {
-    karyoploteR::kpText(kp, labels = paste0("top TF(s): ", paste(TFs, collapse = " ")), chr = chr, x = (data_toplot$Peak_start + data_toplot$Peak_end) / 2, y = 0.55, col = "black", cex = 0.6)
-  }
+  karyoploteR::kpText(kp, labels = paste0("top TF(s): ", paste(head(TFs, 3), collapse = " ")), chr = chr, x = (data_toplot$Peak_start + data_toplot$Peak_end) / 2, y = 0.55, col = "black", cex = 0.6)
 
   ### title
   bb <- karyoploteR::getMainTitleBoundingBox(kp)
@@ -181,23 +181,27 @@ plot_circuits_with_gene <- function(data, gene, gene_track = T, TxDb, peak_track
   karyoploteR::kpArrows(kp, chr = chr, x0 = data_toplot$Gene_TSS, x1 = data_toplot$Gene_TSS, y0 = 0.1, y1 = 0.18, length = 0.05)
 
   ## plot peaks
+  labels <- paste0("peak ", data_toplot$Peak_chr, ":", data_toplot$Peak_start, "-", data_toplot$Peak_end)
+
   for (i in 1:nrow(data_toplot)) {
     ends <- regioneR::toGRanges(data_toplot[i, c("Peak_chr", "Peak_start", "Peak_end")])
     karyoploteR::kpPlotRegions(kp, data = ends, r0 = 0.2, r1 = 0.3, col = "red")
     karyoploteR::kpPlotLinks(kp, data = starts, data2 = ends, r0 = 0.3, r1 = 0.5, col = "grey")
-    karyoploteR::kpText(kp, labels = paste0("peak #", i, " ", chr, ":", data_toplot[i, "Peak_start"], "-", data_toplot[i, "Peak_end"]), chr = chr, x = (data_toplot[i, "Peak_start"] + data_toplot[i, "Peak_end"]) / 2, y = 0.65 - 0.05 * (i - 1), col = "black", cex = 0.6)
-    karyoploteR::kpArrows(kp, chr = chr, x0 = (data_toplot[i, "Peak_start"] + data_toplot[i, "Peak_end"]) / 2, x1 = (data_toplot[i, "Peak_start"] + data_toplot[i, "Peak_end"]) / 2, y0 = 0.5 - 0.05 * (i - 1), y1 = 0.4, length = 0.05)
+    # karyoploteR::kpText(kp, labels = paste0("peak #", i, " ", chr, ":", data_toplot[i, "Peak_start"], "-", data_toplot[i, "Peak_end"]), chr = chr, x = (data_toplot[i, "Peak_start"] + data_toplot[i, "Peak_end"]) / 2, y = 0.65 - 0.05 * (i - 1), col = "black", cex = 0.6)
+    karyoploteR::kpArrows(kp, chr = chr, x0 = (data_toplot[i, "Peak_start"] + data_toplot[i, "Peak_end"]) / 2, x1 = (data_toplot[i, "Peak_start"] + data_toplot[i, "Peak_end"]) / 2, y0 = 0.45, y1 = 0.4, length = 0.05)
 
-    ### top TF(s)
+
     TF_binding_prob <- data_toplot[i, "TFs.binding.prob."]
     TFs <- gsub("\\(.*?\\)", "", strsplit(TF_binding_prob, ",\\s*")[[1]])
     TFs <- TFs[TFs != ""]
-    if (length(TFs) >= 3) {
-      karyoploteR::kpText(kp, labels = paste0("top TF(s): ", paste(head(TFs, 3), collapse = " ")), chr = chr, x = (data_toplot[i, "Peak_start"] + data_toplot[i, "Peak_end"]) / 2, y = 0.55 - 0.05 * (i - 1), col = "black", cex = 0.6)
-    } else {
-      karyoploteR::kpText(kp, labels = paste0("top TF(s): ", paste(TFs, collapse = " ")), chr = chr, x = (data_toplot[i, "Peak_start"] + data_toplot[i, "Peak_end"]) / 2, y = 0.55 - 0.05 * (i - 1), col = "black", cex = 0.6)
-    }
+
+    labels[i] <- paste(labels[i], paste0("top TF(s): ", paste(head(TFs, 3), collapse = " ")), sep = "\n")
   }
+
+  ### top TF(s)
+
+  peak_marker <- data.frame(chr = data_toplot$Peak_chr, pos = (data_toplot$Peak_start + data_toplot$Peak_end) / 2,labels = labels)
+  karyoploteR::kpPlotMarkers(kp,chr = peak_marker$chr, x = peak_marker$pos, y = 0.6, labels = peak_marker$labels,text.orientation = "horizontal",adjust.label.position = T, line.color = "black", cex = 0.6, r0 = 0.4, r1 = 0.6)
 
   ### title
   bb <- karyoploteR::getMainTitleBoundingBox(kp)
@@ -289,11 +293,8 @@ plot_circuits_with_peak <- function(data, peak_chr, peak_start, peak_end, gene_t
   TF_binding_prob <- data_toplot[, "TFs.binding.prob."]
   TFs <- gsub("\\(.*?\\)", "", strsplit(TF_binding_prob, ",\\s*")[[1]])
   TFs <- TFs[TFs != ""]
-  if (length(TFs) >= 3) {
-    karyoploteR::kpText(kp, labels = paste0("top TF(s): ", paste(head(TFs, 3), collapse = " ")), chr = chr, x = (data_toplot$Peak_start + data_toplot$Peak_end) / 2, y = 0.55, col = "black", cex = 0.6)
-  } else {
-    karyoploteR::kpText(kp, labels = paste0("top TF(s): ", paste(TFs, collapse = " ")), chr = chr, x = (data_toplot$Peak_start + data_toplot$Peak_end) / 2, y = 0.55, col = "black", cex = 0.6)
-  }
+  karyoploteR::kpText(kp, labels = paste0("top TF(s): ", paste(head(TFs, 3), collapse = " ")), chr = chr, x = (data_toplot$Peak_start + data_toplot$Peak_end) / 2, y = 0.55, col = "black", cex = 0.6)
+
 
   ## plot genes
   for (i in 1:nrow(data_toplot)) {
