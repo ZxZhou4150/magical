@@ -54,6 +54,7 @@ plot_circuits_with_idx <- function(data, idx, gene_track = T, TxDb, peak_track =
     genes.data <- karyoploteR::mergeTranscripts(genes.data)
 
     karyoploteR::kpPlotGenes(kp, data = genes.data, data.panel = 2, r0 = 0.7, r1 = 0.85, gene.name.cex = 0.6, gene.name.position = "top", transcript.name.position = "top", add.gene.names = T, col = "grey")
+    karyoploteR::kpAddLabels(kp, labels = "Gene track", data.panel = 2, r0 = 0.7, r1 = 0.85, cex = 0.6, col = "black")
   }
 
   ## peak track
@@ -64,6 +65,7 @@ plot_circuits_with_idx <- function(data, idx, gene_track = T, TxDb, peak_track =
     peaks_range <- regioneR::toGRanges(peaks)
     # karyoploteR::kpPlotRegions(kp, data = peaks_range, data.panel = 2, r0 = 0.9, r1 = 1, col = peaks_range$itemRgb)
     karyoploteR::kpPlotDensity(kp, data = peaks_range, data.panel = 2, r0 = 0.4, r1 = 0.1, window.size = 10^(length_digit - 1.1))
+    karyoploteR::kpAddLabels(kp, labels = "Chromatin \n activity", data.panel = 2, r0 = 0.4, r1 = 0.1, cex = 0.6, col = "black")
   }
 
   ## finding start and end
@@ -91,7 +93,7 @@ plot_circuits_with_idx <- function(data, idx, gene_track = T, TxDb, peak_track =
   TF_binding_prob <- data_toplot[, "TFs.binding.prob."]
   TFs <- gsub("\\(.*?\\)", "", strsplit(TF_binding_prob, ",\\s*")[[1]])
   TFs <- TFs[TFs != ""]
-  karyoploteR::kpText(kp, labels = paste0("top TF(s): ", paste(head(TFs, 3), collapse = " ")), chr = chr, x = (data_toplot$Peak_start + data_toplot$Peak_end) / 2, y = 0.55, col = "black", cex = 0.6)
+  karyoploteR::kpText(kp, labels = paste0("top binding TF(s): ", paste(head(TFs, 3), collapse = " ")), chr = chr, x = (data_toplot$Peak_start + data_toplot$Peak_end) / 2, y = 0.55, col = "black", cex = 0.6)
 
   ### title
   bb <- karyoploteR::getMainTitleBoundingBox(kp)
@@ -162,6 +164,7 @@ plot_circuits_with_gene <- function(data, gene, gene_track = T, TxDb, peak_track
     genes.data <- karyoploteR::mergeTranscripts(genes.data)
 
     karyoploteR::kpPlotGenes(kp, data = genes.data, data.panel = 2, r0 = 0.7, r1 = 0.85, gene.name.cex = 0.6, gene.name.position = "top", transcript.name.position = "top", add.gene.names = T, col = "grey")
+    karyoploteR::kpAddLabels(kp, labels = "Gene track", data.panel = 2, r0 = 0.7, r1 = 0.85, cex = 0.6, col = "black")
   }
 
   ## peak track
@@ -172,6 +175,7 @@ plot_circuits_with_gene <- function(data, gene, gene_track = T, TxDb, peak_track
     peaks_range <- regioneR::toGRanges(peaks)
     # karyoploteR::kpPlotRegions(kp, data = peaks_range, data.panel = 2, r0 = 0.9, r1 = 1, col = peaks_range$itemRgb)
     karyoploteR::kpPlotDensity(kp, data = peaks_range, data.panel = 2, r0 = 0.4, r1 = 0.1, window.size = 10^(length_digit - 1.1))
+    karyoploteR::kpAddLabels(kp, labels = "Chromatin \n activity", data.panel = 2, r0 = 0.4, r1 = 0.1, cex = 0.6, col = "black")
   }
 
   ## plot gene
@@ -195,7 +199,7 @@ plot_circuits_with_gene <- function(data, gene, gene_track = T, TxDb, peak_track
     TFs <- gsub("\\(.*?\\)", "", strsplit(TF_binding_prob, ",\\s*")[[1]])
     TFs <- TFs[TFs != ""]
 
-    labels[i] <- paste(labels[i], paste0("top TF(s): ", paste(head(TFs, 3), collapse = " ")), sep = "\n")
+    labels[i] <- paste(labels[i], paste0("top binding TF(s): ", paste(head(TFs, 3), collapse = " ")), sep = "\n")
   }
 
   ### top TF(s)
@@ -271,6 +275,7 @@ plot_circuits_with_peak <- function(data, peak_chr, peak_start, peak_end, gene_t
     genes.data <- karyoploteR::mergeTranscripts(genes.data)
 
     karyoploteR::kpPlotGenes(kp, data = genes.data, data.panel = 2, r0 = 0.7, r1 = 0.85, gene.name.cex = 0.6, gene.name.position = "top", transcript.name.position = "top", add.gene.names = T, col = "grey")
+    karyoploteR::kpAddLabels(kp, labels = "Gene track", data.panel = 2, r0 = 0.7, r1 = 0.85, cex = 0.6, col = "black")
   }
 
   ## peak track
@@ -281,6 +286,7 @@ plot_circuits_with_peak <- function(data, peak_chr, peak_start, peak_end, gene_t
     peaks_range <- regioneR::toGRanges(peaks)
     # karyoploteR::kpPlotRegions(kp, data = peaks_range, data.panel = 2, r0 = 0.9, r1 = 1, col = peaks_range$itemRgb)
     karyoploteR::kpPlotDensity(kp, data = peaks_range, data.panel = 2, r0 = 0.4, r1 = 0.1, window.size = 10^(length_digit - 1.1))
+    karyoploteR::kpAddLabels(kp, labels = "Chromatin \n activity", data.panel = 2, r0 = 0.4, r1 = 0.1, cex = 0.6, col = "black")
   }
 
   ## plot peak
@@ -293,7 +299,7 @@ plot_circuits_with_peak <- function(data, peak_chr, peak_start, peak_end, gene_t
   TF_binding_prob <- data_toplot[, "TFs.binding.prob."]
   TFs <- gsub("\\(.*?\\)", "", strsplit(TF_binding_prob, ",\\s*")[[1]])
   TFs <- TFs[TFs != ""]
-  karyoploteR::kpText(kp, labels = paste0("top TF(s): ", paste(head(TFs, 3), collapse = " ")), chr = chr, x = (data_toplot$Peak_start + data_toplot$Peak_end) / 2, y = 0.55, col = "black", cex = 0.6)
+  karyoploteR::kpText(kp, labels = paste0("top binding TF(s): ", paste(head(TFs, 3), collapse = " ")), chr = chr, x = (data_toplot$Peak_start + data_toplot$Peak_end) / 2, y = 0.55, col = "black", cex = 0.6)
 
 
   ## plot genes
