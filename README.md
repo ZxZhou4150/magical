@@ -43,7 +43,7 @@ Xi Chen et al., **Mapping disease regulatory circuits at cell-type resolution fr
 
 
 ## Contact
-Questions regarding the single cell multiome data and MAGICAL framework can be emailed to Xi Chen (<xchen@flatironinstitute.org>) and Yuan Wang (<yuanwang@cs.princeton.edu>). Other questions about our work should be emailed to Olga G. Troyanskaya (<ogt@genomics.princeton.edu>) and Stuart C. Sealfon (<stuart.sealfon@mssm.edu>).
+Questions regarding the single cell multiome data and MAGICAL framework can be emailed to Xi Chen (<xchen@flatironinstitute.org>) and Yuan Wang (<yuanwang@cs.princeton.edu>). Issues regarding this R package can be emailed to Zixiang Zhou (<zz5708@princeton.edu>). Other questions about our work should be emailed to Olga G. Troyanskaya (<ogt@genomics.princeton.edu>) and Stuart C. Sealfon (<stuart.sealfon@mssm.edu>).
 
 
 ## License
