@@ -22,6 +22,9 @@
 #' * TF_peak_binding_matrix: a sparse matrix of TF binding on ATAC peaks
 #' * Refseq: a data frame of Refseq
 #'
+#' @import Matrix
+#' @importFrom Matrix colSums rowSums sparseMatrix as.matrix
+#'
 #' @export
 
 Data_loading <- function(Candidate_Gene_file_path, Candidate_Peak_file_path,
@@ -163,6 +166,9 @@ Data_loading <- function(Candidate_Gene_file_path, Candidate_Peak_file_path,
 #' * TF_peak_binding: TF-peak binding matrix
 #' * Peak_Gene_looping: peak-gene looping matrix
 #'
+#' @import Matrix
+#' @importFrom Matrix colSums rowSums sparseMatrix as.matrix
+#'
 #' @export
 
 Candidate_circuits_construction_with_TAD <- function(loaded_data, TAD_file_path) {
@@ -248,7 +254,7 @@ Candidate_circuits_construction_with_TAD <- function(loaded_data, TAD_file_path)
     }
   }
 
-  Candidate_Peak_Gene_looping <- as(Candidate_Peak_Gene_looping_TAD * Candidate_Peak_Gene_looping_distance_control, "dgTMatrix")
+  Candidate_Peak_Gene_looping <- as(Candidate_Peak_Gene_looping_TAD * Candidate_Peak_Gene_looping_distance_control, "TsparseMatrix")
 
 
   Peak_index <- which(rowSums(Candidate_Peak_Gene_looping) > 0)
@@ -364,6 +370,9 @@ Candidate_circuits_construction_with_TAD <- function(loaded_data, TAD_file_path)
 #' * Gene_log2Count: log2 transformed gene expression
 #' * TF_peak_binding: TF-peak binding matrix
 #' * Peak_Gene_looping: peak-gene looping matrix
+#'
+#' @import Matrix
+#' @importFrom Matrix colSums rowSums sparseMatrix as.matrix
 #'
 #' @export
 Candidate_circuits_construction_without_TAD <- function(loaded_data, distance_control) {
@@ -537,6 +546,9 @@ Candidate_circuits_construction_without_TAD <- function(loaded_data, distance_co
 #' @param Candidate_circuits The output from "Candidate_circuits" (with or without TAD)
 #'
 #' @return A list of initial values for the MCMC model
+#'
+#' @import Matrix
+#' @importFrom Matrix colSums rowSums sparseMatrix as.matrix
 #'
 #' @export
 MAGICAL_initialization <- function(loaded_data, Candidate_circuits) {
@@ -897,6 +909,9 @@ Peak_gene_binary_looping_L_state_samping <- function(R, R_sample, RNA_Cell_Sampl
 #' * Peak_Gene_Looping_prob: The posterior probability of looping between peaks and genes
 #' * Noise_parameters: The posterior noise parameters
 #'
+#' @import Matrix
+#' @importFrom Matrix colSums rowSums sparseMatrix as.matrix
+#'
 #' @export
 
 MAGICAL_estimation <- function(loaded_data, Candidate_circuits, Initial_model, iteration_num) {
@@ -1068,6 +1083,9 @@ MAGICAL_estimation <- function(loaded_data, Candidate_circuits, Initial_model, i
 #' @param prob_threshold_peak_gene_looping The threshold of peak-gene looping probability. Default is 0.95
 #'
 #' @return There is no return value for this function, but it will write a file with this format: Gene_symbol - Gene_chr - Gene_TSS - Peak_chr - Peak_start - Peak_end - Looping_prob - TFs(binding prob)
+#'
+#' @import Matrix
+#' @importFrom Matrix colSums rowSums sparseMatrix as.matrix
 #'
 #' @export
 MAGICAL_circuits_output <- function(Output_file_path, Candidate_circuits, Circuits_linkage_posterior,
