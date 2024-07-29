@@ -47,5 +47,8 @@ A list named "loaded_data" containing the following elements:
 }
 }
 \description{
-Load all input files.
+Load data from files.
+}
+\seealso{
+\code{\link[=Data_loading_from_workspace]{Data_loading_from_workspace()}}
 }
