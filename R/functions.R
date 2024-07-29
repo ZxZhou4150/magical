@@ -173,7 +173,12 @@ Data_loading <- function(Candidate_Gene_file_path, Candidate_Peak_file_path,
 #' @importFrom Matrix colSums rowSums sparseMatrix as.matrix
 #'
 #' @export
-Data_loading_from_workspace <- function(Common_samples, Candidate_Genes, Candidate_Peaks, scRNA_Genes, scRNA_cells, scRNA_read_count_matrix, scATAC_Peaks, scATAC_cells, scATAC_read_count_matrix, Motifs, TF_Peak_binding_matrix, Refseq) {
+Data_loading_from_workspace <- function(Candidate_Genes, Candidate_Peaks, scRNA_Genes, scRNA_cells, scRNA_read_count_matrix, scATAC_Peaks, scATAC_cells, scATAC_read_count_matrix, Motifs, TF_Peak_binding_matrix, Refseq) {
+
+  scATAC_samples <- unique(scATAC_cells$subject_ID)
+  scRNA_samples <- unique(scRNA_cells$subject_ID)
+  Common_samples <- intersect(scRNA_samples, scATAC_samples)
+
   loaded_data <- list(
     "Common_samples" = Common_samples,
     "Candidate_Genes" = data.frame(Candidate_Genes),
