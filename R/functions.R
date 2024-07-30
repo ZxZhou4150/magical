@@ -754,7 +754,12 @@ TF_activity_T_sampling <- function(A, A_sample, ATAC_Cell_Sample_vector, R, R_sa
 TF_peak_binding_B_sampling <- function(A, A_sample, ATAC_Cell_Sample_vector, TFA, B, B_state, B_prior_mean, B_prior_var, sigma_A_noise, P, G, M, S) {
   T_sample <- matrix(0, nrow = M, ncol = S)
   for (s in 1:S) {
-    T_sample[, s] <- rowMeans(TFA$T_A[, which(ATAC_Cell_Sample_vector == s)])
+  totake <- which(ATAC_Cell_Sample_vector == s)
+  if (length(totake) == 1) {
+    T_sample[, s] <- TFA$T_sample[, totake]
+  }else{
+    T_sample[, s] <- rowMeans(TFA$T_A[, totake])
+  }
   }
 
   TF_index <- sample(M)
@@ -779,7 +784,12 @@ TF_peak_binding_B_sampling <- function(A, A_sample, ATAC_Cell_Sample_vector, TFA
 Peak_gene_looping_L_samping <- function(R, R_sample, RNA_Cell_Sample_vector, TFA, B, L, L_state, L_prior_mean, L_prior_var, sigma_R_noise, P, G, M, S) {
   T_sample <- matrix(0, nrow = M, ncol = S)
   for (s in 1:S) {
-    T_sample[, s] <- rowMeans(TFA$T_R[, which(RNA_Cell_Sample_vector == s)])
+    totake <- which(RNA_Cell_Sample_vector == s)
+    if (length(totake) == 1) {
+      T_sample[, s] <- TFA$T_sample[, totake]}
+    else{
+      T_sample[, s] <- rowMeans(TFA$T_R[, totake])
+    }
   }
 
   A_estimate <- B %*% TFA$T_sample
@@ -805,7 +815,12 @@ TF_peak_binary_binding_B_state_sampling <- function(A, A_sample, ATAC_Cell_Sampl
                                                     B, B_state, B_prior_mean, B_prior_var, B_prior_prob, sigma_A_noise, P, G, M, S) {
   T_sample <- matrix(0, nrow = M, ncol = S)
   for (s in 1:S) {
-    T_sample[, s] <- rowMeans(TFA$T_A[, which(ATAC_Cell_Sample_vector == s)])
+    totake <- which(ATAC_Cell_Sample_vector == s)
+    if (length(totake) == 1) {
+      T_sample[, s] <- TFA$T_A[, totake]
+    }else{
+      T_sample[, s] <- rowMeans(TFA$T_A[, which(ATAC_Cell_Sample_vector == s)])
+    }
   }
 
   TF_index <- sample(M)
@@ -894,7 +909,12 @@ Peak_gene_binary_looping_L_state_samping <- function(R, R_sample, RNA_Cell_Sampl
 
   T_sample <- matrix(0, nrow = M, ncol = S)
   for (s in 1:S) {
-    T_sample[, s] <- rowMeans(TFA$T_R[, which(RNA_Cell_Sample_vector == s)])
+    totake <- which(RNA_Cell_Sample_vector == s)
+    if (length(totake) == 1) {
+      T_sample[, s] <- TFA$T_R[, totake]
+    } else {
+      T_sample[, s] <- rowMeans(TFA$T_R[, totake])
+    }
   }
 
 
