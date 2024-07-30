@@ -174,6 +174,16 @@ Data_loading <- function(Candidate_Gene_file_path, Candidate_Peak_file_path,
 #'
 #' @export
 Data_loading_from_workspace <- function(Candidate_Genes, Candidate_Peaks, scRNA_Genes, scRNA_cells, scRNA_read_count_matrix, scATAC_Peaks, scATAC_cells, scATAC_read_count_matrix, Motifs, TF_Peak_binding_matrix, Refseq) {
+  colnames(Candidate_Genes) <- c("Gene_symbols")
+  colnames(scRNA_Genes) <- c("Gene_index", "Gene_symbols")
+  colnames(scRNA_cells) <- c("cell_index", "cell_barcode", "cell_type", "subject_ID", "condition")
+
+  colnames(Candidate_Peaks) <- c("chr", "point1", "point2")
+  colnames(scATAC_Peaks) <- c("Peak_index", "chr", "point1", "point2")
+  colnames(scATAC_cells) <- c("cell_index", "cell_barcode", "cell_type", "subject_ID")
+
+  colnames(Motifs) <- c("motif_index", "name")
+  colnames(Refseq) <- c("chr", "strand", "start", "end", "Gene_symbols")
 
   scATAC_samples <- unique(scATAC_cells$subject_ID)
   scRNA_samples <- unique(scRNA_cells$subject_ID)
