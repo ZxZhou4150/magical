@@ -5,7 +5,6 @@
 \title{Loading Data}
 \usage{
 Data_loading_from_workspace(
-  Common_samples,
   Candidate_Genes,
   Candidate_Peaks,
   scRNA_Genes,
