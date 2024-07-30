@@ -50,7 +50,7 @@ Data_loading <- function(Candidate_Gene_file_path, Candidate_Peak_file_path,
   colnames(scRNA_Genes) <- c("Gene_index", "Gene_symbols")
 
   scRNA_cells <- read.table(scRNA_cellmeta_file_path, sep = "\t")
-  colnames(scRNA_cells) <- c("cell_index", "cell_barcode", "cell_type", "subject_ID", "condition")
+    colnames(scRNA_cells) <- c("cell_index", "cell_barcode", "cell_type", "subject_ID", "condition")
 
   scRNA_read_count_table <- read.table(scRNA_readcount_file_path, sep = "\t")
   scRNA_read_count_matrix <- sparseMatrix(
@@ -321,7 +321,12 @@ Candidate_circuits_construction_with_TAD <- function(loaded_data, TAD_file_path)
   # pseudobulk ATAC data is calculated for model initialization
   ATAC_count <- matrix(0, nrow = nrow(scATAC_read_count_matrix), ncol = length(Common_samples))
   for (s in 1:length(Common_samples)) {
-    ATAC_count[, s] <- rowSums(scATAC_read_count_matrix[, which(scATAC_cells$subject_ID == Common_samples[s])])
+    totake <- which(scATAC_cells$subject_ID == Common_samples[s])
+    if(length(totake) == 1) {
+      ATAC_count[, s] <- scATAC_read_count_matrix[, totake]
+    } else {
+      ATAC_count[, s] <- rowSums(scATAC_read_count_matrix[, which(scATAC_cells$subject_ID == Common_samples[s])])
+    }
   }
   colnames(ATAC_count) <- Common_samples
   rownames(ATAC_count) <- scATAC_Peaks$Peak_index
@@ -339,7 +344,12 @@ Candidate_circuits_construction_with_TAD <- function(loaded_data, TAD_file_path)
   # pseudobulk RNA data is calculated for model initialization
   RNA_count <- matrix(0, nrow = nrow(scRNA_read_count_matrix), ncol = length(Common_samples))
   for (s in 1:length(Common_samples)) {
-    RNA_count[, s] <- rowSums(scRNA_read_count_matrix[, which(scRNA_cells$subject_ID == Common_samples[s])])
+   totake <- which(scRNA_cells$subject_ID == Common_samples[s])
+   if(length(totake) == 1) {
+     RNA_count[, s] <- scRNA_read_count_matrix[, totake]
+   } else {
+     RNA_count[, s] <- rowSums(scRNA_read_count_matrix[, which(scRNA_cells$subject_ID == Common_samples[s])])
+   }
   }
   colnames(RNA_count) <- Common_samples
   rownames(RNA_count) <- scRNA_Genes$Gene_symbols
@@ -505,7 +515,12 @@ Candidate_circuits_construction_without_TAD <- function(loaded_data, distance_co
   # pseudobulk ATAC data is calculated for model initialization
   ATAC_count <- matrix(0, nrow = nrow(scATAC_read_count_matrix), ncol = length(Common_samples))
   for (s in 1:length(Common_samples)) {
-    ATAC_count[, s] <- rowSums(scATAC_read_count_matrix[, which(scATAC_cells$subject_ID == Common_samples[s])])
+    totake <- which(scATAC_cells == Common_samples[s])
+    if(length(totake) == 1){
+      ATAC_count[, s] <- scATAC_read_count_matrix[, totake]
+    } else {
+      ATAC_count[, s] <- rowSums(scATAC_read_count_matrix[, totake])
+    }
   }
   colnames(ATAC_count) <- Common_samples
   rownames(ATAC_count) <- scATAC_Peaks$Peak_index
@@ -523,7 +538,12 @@ Candidate_circuits_construction_without_TAD <- function(loaded_data, distance_co
   # pseudobulk RNA data is calculated for model initialization
   RNA_count <- matrix(0, nrow = nrow(scRNA_read_count_matrix), ncol = length(Common_samples))
   for (s in 1:length(Common_samples)) {
-    RNA_count[, s] <- rowSums(scRNA_read_count_matrix[, which(scRNA_cells$subject_ID == Common_samples[s])])
+    totake <- which(scRNA_cells == Common_samples[s])
+    if(length(totake) == 1){
+      RNA_count[, s] <- scRNA_read_count_matrix[, totake]
+    } else {
+      RNA_count[, s] <- rowSums(scRNA_read_count_matrix[, totake])
+    }
   }
   colnames(RNA_count) <- Common_samples
   rownames(RNA_count) <- scRNA_Genes$Gene_symbols
