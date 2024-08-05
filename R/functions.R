@@ -196,7 +196,7 @@ Data_loading_from_workspace <- function(Candidate_Genes, Candidate_Peaks, scRNA_
     "scRNA_Genes" = data.frame(scRNA_Genes),
     "scRNA_cells" = data.frame(scRNA_cells),
     "scRNA_read_count_matrix" = as(scRNA_read_count_matrix, "TsparseMatrix"),
-    "scATAC_Peaks" = data_frame(scATAC_Peaks),
+    "scATAC_Peaks" = data.frame(scATAC_Peaks),
     "scATAC_cells" = data.frame(scATAC_cells),
     "scATAC_read_count_matrix" = as(scATAC_read_count_matrix,"TsparseMatrix"),
     "Motifs" = data.frame(Motifs),
