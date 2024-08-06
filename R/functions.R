@@ -358,7 +358,7 @@ Candidate_circuits_construction_with_TAD <- function(loaded_data, TAD_file_path)
    if(length(totake) == 1) {
      RNA_count[, s] <- scRNA_read_count_matrix[, totake]
    } else {
-     RNA_count[, s] <- rowSums(scRNA_read_count_matrix[, which(scRNA_cells$subject_ID == Common_samples[s])])
+     RNA_count[, s] <- rowSums(scRNA_read_count_matrix[, totake])
    }
   }
   colnames(RNA_count) <- Common_samples
@@ -548,7 +548,7 @@ Candidate_circuits_construction_without_TAD <- function(loaded_data, distance_co
   # pseudobulk RNA data is calculated for model initialization
   RNA_count <- matrix(0, nrow = nrow(scRNA_read_count_matrix), ncol = length(Common_samples))
   for (s in 1:length(Common_samples)) {
-    totake <- which(scRNA_cells == Common_samples[s])
+    totake <- which(scRNA_cells$subject_ID == Common_samples[s])
     if(length(totake) == 1){
       RNA_count[, s] <- scRNA_read_count_matrix[, totake]
     } else {
