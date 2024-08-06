@@ -335,7 +335,7 @@ Candidate_circuits_construction_with_TAD <- function(loaded_data, TAD_file_path)
     if(length(totake) == 1) {
       ATAC_count[, s] <- scATAC_read_count_matrix[, totake]
     } else {
-      ATAC_count[, s] <- rowSums(scATAC_read_count_matrix[, which(scATAC_cells$subject_ID == Common_samples[s])])
+      ATAC_count[, s] <- rowSums(scATAC_read_count_matrix[, totake])
     }
   }
   colnames(ATAC_count) <- Common_samples
@@ -525,7 +525,7 @@ Candidate_circuits_construction_without_TAD <- function(loaded_data, distance_co
   # pseudobulk ATAC data is calculated for model initialization
   ATAC_count <- matrix(0, nrow = nrow(scATAC_read_count_matrix), ncol = length(Common_samples))
   for (s in 1:length(Common_samples)) {
-    totake <- which(scATAC_cells == Common_samples[s])
+    totake <- which(scATAC_cells$subject_ID == Common_samples[s])
     if(length(totake) == 1){
       ATAC_count[, s] <- scATAC_read_count_matrix[, totake]
     } else {
