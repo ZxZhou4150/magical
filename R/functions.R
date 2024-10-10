@@ -1,8 +1,10 @@
+#' @useDynLib magical, .registration = TRUE
+NULL
+
 #' Loading Data
 #'
 #' Load data from files.
 #'
-#' @seealso [Data_loading_from_workspace()]
 #'
 #' @param Candidate_gene_file_path,Candidate_peak_file_path paths to pre-selected candidate genes and peaks for the cell type
 #' @param scRNA_readcount_file_path,scRNA_gene_file_path,scRNA_cellmeta_file_path paths to filtered scRNA data of the cell type
@@ -148,64 +150,64 @@ Data_loading <- function(Candidate_Gene_file_path, Candidate_Peak_file_path,
   return(loaded_data)
 }
 
-#' Loading Data
+#' #' Loading Data
+#' #'
+#' #' Load data from workspace.
+#' #'
+#' #' @seealso [Data_loading()] for loading data from files.
+#' #'
+#' #'
+#' #' @return A list named "loaded_data" containing the following elements:
+#' #' * Common_samples: a vector of common samples between scRNA and scATAC data
+#' #' * Candidate_Genes: a data frame of candidate genes
+#' #' * Candidate_Peaks: a data frame of candidate peaks
+#' #' * scRNA_Genes: a data frame of scRNA genes
+#' #' * scRNA_cells: a data frame of scRNA cells
+#' #' * scRNA_read_count_matrix: a sparse matrix of scRNA read counts
+#' #' * scATAC_Peaks: a data frame of scATAC peaks
+#' #' * scATAC_cells: a data frame of scATAC cells
+#' #' * scATAC_read_count_matrix: a sparse matrix of scATAC read counts
+#' #' * Motifs: a data frame of TF motifs
+#' #' * TF_peak_binding_matrix: a sparse matrix of TF binding on ATAC peaks
+#' #' * Refseq: a data frame of Refseq
+#' #'
+#' #' @import Matrix
+#' #' @importFrom Matrix colSums rowSums sparseMatrix as.matrix
+#' #'
+#' #' @export
+#' Data_loading_from_workspace <- function(Candidate_Genes, Candidate_Peaks, scRNA_Genes, scRNA_cells, scRNA_read_count_matrix, scATAC_Peaks, scATAC_cells, scATAC_read_count_matrix, Motifs, TF_Peak_binding_matrix, Refseq) {
+#'   colnames(Candidate_Genes) <- c("Gene_symbols")
+#'   colnames(scRNA_Genes) <- c("Gene_index", "Gene_symbols")
+#'   colnames(scRNA_cells) <- c("cell_index", "cell_barcode", "cell_type", "subject_ID", "condition")
 #'
-#' Load data from workspace.
+#'   colnames(Candidate_Peaks) <- c("chr", "point1", "point2")
+#'   colnames(scATAC_Peaks) <- c("Peak_index", "chr", "point1", "point2")
+#'   colnames(scATAC_cells) <- c("cell_index", "cell_barcode", "cell_type", "subject_ID")
 #'
-#' @seealso [Data_loading()] for loading data from files.
+#'   colnames(Motifs) <- c("motif_index", "name")
+#'   colnames(Refseq) <- c("chr", "strand", "start", "end", "Gene_symbols")
 #'
+#'   scATAC_samples <- unique(scATAC_cells$subject_ID)
+#'   scRNA_samples <- unique(scRNA_cells$subject_ID)
+#'   Common_samples <- intersect(scRNA_samples, scATAC_samples)
 #'
-#' @return A list named "loaded_data" containing the following elements:
-#' * Common_samples: a vector of common samples between scRNA and scATAC data
-#' * Candidate_Genes: a data frame of candidate genes
-#' * Candidate_Peaks: a data frame of candidate peaks
-#' * scRNA_Genes: a data frame of scRNA genes
-#' * scRNA_cells: a data frame of scRNA cells
-#' * scRNA_read_count_matrix: a sparse matrix of scRNA read counts
-#' * scATAC_Peaks: a data frame of scATAC peaks
-#' * scATAC_cells: a data frame of scATAC cells
-#' * scATAC_read_count_matrix: a sparse matrix of scATAC read counts
-#' * Motifs: a data frame of TF motifs
-#' * TF_peak_binding_matrix: a sparse matrix of TF binding on ATAC peaks
-#' * Refseq: a data frame of Refseq
+#'   loaded_data <- list(
+#'     "Common_samples" = Common_samples,
+#'     "Candidate_Genes" = data.frame(Candidate_Genes),
+#'     "Candidate_Peaks" = data.frame(Candidate_Peaks),
+#'     "scRNA_Genes" = data.frame(scRNA_Genes),
+#'     "scRNA_cells" = data.frame(scRNA_cells),
+#'     "scRNA_read_count_matrix" = as(scRNA_read_count_matrix, "TsparseMatrix"),
+#'     "scATAC_Peaks" = data.frame(scATAC_Peaks),
+#'     "scATAC_cells" = data.frame(scATAC_cells),
+#'     "scATAC_read_count_matrix" = as(scATAC_read_count_matrix,"TsparseMatrix"),
+#'     "Motifs" = data.frame(Motifs),
+#'     "TF_Peak_binding_matrix" = as(TF_Peak_binding_matrix,"TsparseMatrix"),
+#'     "Refseq" = data.frame(Refseq)
+#'   )
 #'
-#' @import Matrix
-#' @importFrom Matrix colSums rowSums sparseMatrix as.matrix
-#'
-#' @export
-Data_loading_from_workspace <- function(Candidate_Genes, Candidate_Peaks, scRNA_Genes, scRNA_cells, scRNA_read_count_matrix, scATAC_Peaks, scATAC_cells, scATAC_read_count_matrix, Motifs, TF_Peak_binding_matrix, Refseq) {
-  colnames(Candidate_Genes) <- c("Gene_symbols")
-  colnames(scRNA_Genes) <- c("Gene_index", "Gene_symbols")
-  colnames(scRNA_cells) <- c("cell_index", "cell_barcode", "cell_type", "subject_ID", "condition")
-
-  colnames(Candidate_Peaks) <- c("chr", "point1", "point2")
-  colnames(scATAC_Peaks) <- c("Peak_index", "chr", "point1", "point2")
-  colnames(scATAC_cells) <- c("cell_index", "cell_barcode", "cell_type", "subject_ID")
-
-  colnames(Motifs) <- c("motif_index", "name")
-  colnames(Refseq) <- c("chr", "strand", "start", "end", "Gene_symbols")
-
-  scATAC_samples <- unique(scATAC_cells$subject_ID)
-  scRNA_samples <- unique(scRNA_cells$subject_ID)
-  Common_samples <- intersect(scRNA_samples, scATAC_samples)
-
-  loaded_data <- list(
-    "Common_samples" = Common_samples,
-    "Candidate_Genes" = data.frame(Candidate_Genes),
-    "Candidate_Peaks" = data.frame(Candidate_Peaks),
-    "scRNA_Genes" = data.frame(scRNA_Genes),
-    "scRNA_cells" = data.frame(scRNA_cells),
-    "scRNA_read_count_matrix" = as(scRNA_read_count_matrix, "TsparseMatrix"),
-    "scATAC_Peaks" = data.frame(scATAC_Peaks),
-    "scATAC_cells" = data.frame(scATAC_cells),
-    "scATAC_read_count_matrix" = as(scATAC_read_count_matrix,"TsparseMatrix"),
-    "Motifs" = data.frame(Motifs),
-    "TF_Peak_binding_matrix" = as(TF_Peak_binding_matrix,"TsparseMatrix"),
-    "Refseq" = data.frame(Refseq)
-  )
-
-  return(loaded_data)
-}
+#'   return(loaded_data)
+#' }
 
 
 #' Build candidate circuits
@@ -717,283 +719,283 @@ MAGICAL_initialization <- function(loaded_data, Candidate_circuits) {
 
 
 # Functions within `MAGICAL_estimation`, no need to export
-#*************************** TFA estimation ***************************
-TF_activity_T_sampling <- function(A, A_sample, ATAC_Cell_Sample_vector, R, R_sample, RNA_Cell_Sample_vector, TFA, T_prior_mean, T_prior_var, B, B_state, sigma_A_noise, P, G, M, S) {
-  TF_index <- sample(M)
-  for (i in 1:M) {
-    # during the looping, TFA is iteratively updated for all M TFs and the update order is random in each round of sampling
-    m <- TF_index[i]
-    if (sum(B_state[, m]) > 0) {
-      temp_var <- sum(B[, m]^2) * T_prior_var[m, ] / sum(B_state[, m]) + sigma_A_noise
-      mean_T <- (t(B[, m]) %*% (A_sample - B %*% TFA$T_sample + B[, m] %*% t(TFA$T_sample[m, ])) / sum(B_state[, m]) + T_prior_mean[m, ] * sigma_A_noise) / temp_var
-      variance_T <- T_prior_var[m, ] * sigma_A_noise / temp_var
-
-      for (s in 1:S) {
-        aa <- rnorm(1)
-        if (aa - 3 > 0) {
-          aa <- 3
-        }
-        if (aa + 3 < 0) {
-          aa <- -3
-        }
-
-        TFA$T_sample[m, s] <- aa * sqrt(abs(variance_T[s])) + mean_T[s]
-
-        ATAC_cell_index <- which(ATAC_Cell_Sample_vector == s)
-        TFA$T_A[m, ATAC_cell_index] <- rnorm(length(ATAC_cell_index)) * sqrt(abs(variance_T[s])) + TFA$T_sample[m, s]
-
-        RNA_cell_index <- which(RNA_Cell_Sample_vector == s)
-        TFA$T_R[m, RNA_cell_index] <- rnorm(length(RNA_cell_index)) * sqrt(abs(variance_T[s])) + TFA$T_sample[m, s]
-      }
-    }
-  }
-  return(TFA)
-}
-
-#*************************** TF-peak binding confidence estimation ***************************
-TF_peak_binding_B_sampling <- function(A, A_sample, ATAC_Cell_Sample_vector, TFA, B, B_state, B_prior_mean, B_prior_var, sigma_A_noise, P, G, M, S) {
-  T_sample <- matrix(0, nrow = M, ncol = S)
-  for (s in 1:S) {
-  totake <- which(ATAC_Cell_Sample_vector == s)
-  if (length(totake) == 1) {
-    T_sample[, s] <- TFA$T_sample[, totake]
-  }else{
-    T_sample[, s] <- rowMeans(TFA$T_A[, totake])
-  }
-  }
-
-  TF_index <- sample(M)
-
-  for (i in 1:M) {
-    m <- TF_index[i]
-    temp_var <- sum(TFA$T_sample[m, ]^2) * B_prior_var[m] / S + sigma_A_noise
-    mean_B <- ((A_sample - B %*% TFA$T_sample + B[, m] %*% t(TFA$T_sample[m, ])) %*% TFA$T_sample[m, ] * B_prior_var[m] / S + B_prior_mean[, m] * sigma_A_noise) / temp_var
-    vairance_B <- B_prior_var[m] * sigma_A_noise / temp_var
-
-    bb <- rnorm(P)
-    bb[which(bb - 3 > 0)] <- 3
-    bb[which(bb + 3 < 0)] <- -3
-
-    B[, m] <- (bb * sqrt(abs(vairance_B)) + mean_B) * B_state[, m]
-  }
-
-  return(B)
-}
-
-#*************************** Peak-gene looping confidence estimation ***************************
-Peak_gene_looping_L_samping <- function(R, R_sample, RNA_Cell_Sample_vector, TFA, B, L, L_state, L_prior_mean, L_prior_var, sigma_R_noise, P, G, M, S) {
-  T_sample <- matrix(0, nrow = M, ncol = S)
-  for (s in 1:S) {
-    totake <- which(RNA_Cell_Sample_vector == s)
-    if (length(totake) == 1) {
-      T_sample[, s] <- TFA$T_sample[, totake]}
-    else{
-      T_sample[, s] <- rowMeans(TFA$T_R[, totake])
-    }
-  }
-
-  A_estimate <- B %*% TFA$T_sample
-
-  Peak_index <- sample(P)
-  for (i in 1:P) {
-    f <- Peak_index[i]
-    temp_var <- sum(A_estimate[f, ]^2) * L_prior_var / S + sigma_R_noise
-    mean_L <- (A_estimate[f, ] %*% t(R_sample - t(L) %*% A_estimate + L[f, ] %*% t(A_estimate[f, ])) * L_prior_var / S + L_prior_mean[f, ] * sigma_R_noise) / temp_var
-    vairance_L <- L_prior_var * sigma_R_noise / temp_var
-
-    ll <- rnorm(G)
-    ll[which(ll - 3 > 0)] <- 3
-    ll[which(ll + 3 < 0)] <- -3
-
-    L[f, ] <- (ll * sqrt(vairance_L) + mean_L) * L_state[f, ]
-  }
-  return(L)
-}
-
-#*************************** TF-peak binding state update ***************************
-TF_peak_binary_binding_B_state_sampling <- function(A, A_sample, ATAC_Cell_Sample_vector, TFA,
-                                                    B, B_state, B_prior_mean, B_prior_var, B_prior_prob, sigma_A_noise, P, G, M, S) {
-  T_sample <- matrix(0, nrow = M, ncol = S)
-  for (s in 1:S) {
-    totake <- which(ATAC_Cell_Sample_vector == s)
-    if (length(totake) == 1) {
-      T_sample[, s] <- TFA$T_A[, totake]
-    }else{
-      T_sample[, s] <- rowMeans(TFA$T_A[, which(ATAC_Cell_Sample_vector == s)])
-    }
-  }
-
-  TF_index <- sample(M)
-  Peak_index <- sample(P)
-
-  for (i in 1:P) {
-    f <- Peak_index[i]
-    temp <- t(B[f, ]) %*% TFA$T_sample
-
-    for (j in 1:M) {
-      m <- TF_index[j]
-
-      temp_var <- sum(TFA$T_sample[m, ]^2) * B_prior_var[m] / S + sigma_A_noise
-
-      if (B_state[f, m] > 0) {
-        mean_B <- (sum((A_sample[f, ] - temp + B[f, m] * TFA$T_sample[m, ]) * TFA$T_sample[m, ]) * B_prior_var[m] / S + B_prior_mean[f, m] * sigma_A_noise) / temp_var
-
-        vairance_B <- B_prior_var[m] * sigma_A_noise / temp_var
-
-        post_b1 <- exp(-(B[f, m] * 1 - mean_B)^2 / (2 * vairance_B)) * (B_prior_prob[f, m] + 0.25) + 1e-6
-
-        post_b0 <- exp(-(B[f, m] * 0 - mean_B)^2 / (2 * vairance_B)) * (1 - B_prior_prob[f, m] + 0.25) + 1e-6
-
-        P1 <- post_b1 / (post_b1 + post_b0)
-
-        threshold_c <- runif(1)
-
-        if (is.na(P1) || is.nan(P1)) {
-          P1 <- 0.5
-        }
-
-        if (P1 < threshold_c) {
-          B[f, m] <- 0
-          B_state[f, m] <- 0
-        } else {
-          B[f, m] <- B[f, m]
-          B_state[f, m] <- 1
-        }
-      }
-
-      if (B_state[f, m] == 0 && B_prior_prob[f, m] > 0) {
-        mean_B <- (sum((A_sample[f, ] - temp) * TFA$T_sample[m, ]) * B_prior_var[m] / S + B_prior_mean[f, m] * sigma_A_noise) / temp_var
-        vairance_B <- B_prior_var[m] * sigma_A_noise / temp_var
-
-        bb <- rnorm(1)
-
-        if (bb - 3 > 0) {
-          bb <- 3
-        }
-
-        if (bb + 3 < 0) {
-          bb <- -3
-        }
-
-        B_temp <- bb * sqrt(abs(vairance_B)) + mean_B
-
-        post_b1 <- exp(-(bb^2) / 2) * (B_prior_prob[f, m] + 0.25) + 1e-6
-
-        post_b0 <- exp(-(mean_B)^2 / (2 * vairance_B)) * (1 - B_prior_prob[f, m] + 0.25) + 1e-6
-
-        P1 <- post_b1 / (post_b1 + post_b0)
-
-        threshold_c <- runif(1)
-
-        if (is.na(P1) || is.nan(P1)) {
-          P1 <- 0.5
-        }
-
-        if (P1 < threshold_c) {
-          B[f, m] <- 0
-          B_state[f, m] <- 0
-        } else {
-          B[f, m] <- B_temp
-          B_state[f, m] <- 1
-        }
-      }
-    }
-  }
-  Updated_B_and_State <- list("B" = B, "B_state" = B_state)
-  return(Updated_B_and_State)
-}
-#*************************** Peak-gene looping state update ***************************
-Peak_gene_binary_looping_L_state_samping <- function(R, R_sample, RNA_Cell_Sample_vector, TFA, B, L, L_state, L_prior_mean, L_prior_var, L_prior_prob, sigma_R_noise, P, G, M, S) {
-  Peak_index <- sample(P)
-  Gene_index <- sample(G)
-
-  T_sample <- matrix(0, nrow = M, ncol = S)
-  for (s in 1:S) {
-    totake <- which(RNA_Cell_Sample_vector == s)
-    if (length(totake) == 1) {
-      T_sample[, s] <- TFA$T_R[, totake]
-    } else {
-      T_sample[, s] <- rowMeans(TFA$T_R[, totake])
-    }
-  }
-
-
-  A_estimate <- B %*% TFA$T_sample
-
-
-  for (i in 1:G) {
-    g <- Gene_index[i]
-    temp <- L[, g] %*% A_estimate
-
-    for (j in 1:P) {
-      f <- Peak_index[j]
-      temp_var <- sum(A_estimate[f, ]^2) * L_prior_var / S + sigma_R_noise
-
-      if (L_state[f, g] > 0) {
-        mean_L <- (sum((R_sample[g, ] - temp + L[f, g] * A_estimate[f, ]) * A_estimate[f, ]) * L_prior_var / S + L_prior_mean[f, g] * sigma_R_noise) / temp_var
-        vairance_L <- L_prior_var * sigma_R_noise / temp_var
-
-        post_l1 <- exp(-(L[f, g] * 1 - mean_L)^2 / (2 * vairance_L)) * (L_prior_prob[f, g] + 0.25) + 1e-6
-
-        post_l0 <- exp(-(L[f, g] * 0 - mean_L)^2 / (2 * vairance_L)) * (1 - L_prior_prob[f, g] + 0.25) + 1e-6
-
-        P1 <- post_l1 / (post_l1 + post_l0)
-
-        threshold_c <- runif(1)
-
-        if (is.na(P1) || is.nan(P1)) {
-          P1 <- 0.5
-        }
-
-        if (P1 < threshold_c) {
-          L[f, g] <- 0
-          L_state[f, g] <- 0
-        } else {
-          L[f, g] <- L[f, g]
-          L_state[f, g] <- 1
-        }
-      }
-
-      if (L_state[f, g] == 0 && L_prior_prob[f, g] > 0) {
-        mean_L <- (sum((R_sample[g, ] - temp) * A_estimate[f, ]) * L_prior_var / S + L_prior_mean[f, g] * sigma_R_noise) / temp_var
-        vairance_L <- L_prior_var * sigma_R_noise / temp_var
-
-        ll <- rnorm(1)
-
-        if (ll - 3 > 0) {
-          ll <- 3
-        }
-        if (ll + 3 < 0) {
-          ll <- -3
-        }
-
-        L_temp <- ll * sqrt(abs(vairance_L)) + mean_L
-
-        post_l1 <- exp(-ll^2 / 2) * (L_prior_prob[f, g] + 0.1) + 1e-6
-
-        post_l0 <- exp(-(mean_L)^2 / (2 * vairance_L)) * (1 - L_prior_prob[f, g] + 0.1) + 1e-6
-
-        P1 <- post_l1 / (post_l1 + post_l0)
-
-        threshold_c <- runif(1)
-
-        if (is.na(P1) || is.nan(P1)) {
-          P1 <- 0.5
-        }
-
-        if (P1 < threshold_c) {
-          L[f, g] <- 0
-          L_state[f, g] <- 0
-        } else {
-          L[f, g] <- L_temp
-          L_state[f, g] <- 1
-        }
-      }
-    }
-  }
-  Updated_L_and_State <- list("L" = L, "L_state" = L_state)
-  return(Updated_L_and_State)
-}
+# #*************************** TFA estimation ***************************
+# TF_activity_T_sampling <- function(A, A_sample, ATAC_Cell_Sample_vector, R, R_sample, RNA_Cell_Sample_vector, TFA, T_prior_mean, T_prior_var, B, B_state, sigma_A_noise, P, G, M, S) {
+#   TF_index <- sample(M)
+#   for (i in 1:M) {
+#     # during the looping, TFA is iteratively updated for all M TFs and the update order is random in each round of sampling
+#     m <- TF_index[i]
+#     if (sum(B_state[, m]) > 0) {
+#       temp_var <- sum(B[, m]^2) * T_prior_var[m, ] / sum(B_state[, m]) + sigma_A_noise
+#       mean_T <- (t(B[, m]) %*% (A_sample - B %*% TFA$T_sample + B[, m] %*% t(TFA$T_sample[m, ])) / sum(B_state[, m]) + T_prior_mean[m, ] * sigma_A_noise) / temp_var
+#       variance_T <- T_prior_var[m, ] * sigma_A_noise / temp_var
+#
+#       for (s in 1:S) {
+#         aa <- rnorm(1)
+#         if (aa - 3 > 0) {
+#           aa <- 3
+#         }
+#         if (aa + 3 < 0) {
+#           aa <- -3
+#         }
+#
+#         TFA$T_sample[m, s] <- aa * sqrt(abs(variance_T[s])) + mean_T[s]
+#
+#         ATAC_cell_index <- which(ATAC_Cell_Sample_vector == s)
+#         TFA$T_A[m, ATAC_cell_index] <- rnorm(length(ATAC_cell_index)) * sqrt(abs(variance_T[s])) + TFA$T_sample[m, s]
+#
+#         RNA_cell_index <- which(RNA_Cell_Sample_vector == s)
+#         TFA$T_R[m, RNA_cell_index] <- rnorm(length(RNA_cell_index)) * sqrt(abs(variance_T[s])) + TFA$T_sample[m, s]
+#       }
+#     }
+#   }
+#   return(TFA)
+# }
+#
+# #*************************** TF-peak binding confidence estimation ***************************
+# TF_peak_binding_B_sampling <- function(A, A_sample, ATAC_Cell_Sample_vector, TFA, B, B_state, B_prior_mean, B_prior_var, sigma_A_noise, P, G, M, S) {
+#   T_sample <- matrix(0, nrow = M, ncol = S)
+#   for (s in 1:S) {
+#   totake <- which(ATAC_Cell_Sample_vector == s)
+#   if (length(totake) == 1) {
+#     T_sample[, s] <- TFA$T_sample[, totake]
+#   }else{
+#     T_sample[, s] <- rowMeans(TFA$T_A[, totake])
+#   }
+#   }
+#
+#   TF_index <- sample(M)
+#
+#   for (i in 1:M) {
+#     m <- TF_index[i]
+#     temp_var <- sum(TFA$T_sample[m, ]^2) * B_prior_var[m] / S + sigma_A_noise
+#     mean_B <- ((A_sample - B %*% TFA$T_sample + B[, m] %*% t(TFA$T_sample[m, ])) %*% TFA$T_sample[m, ] * B_prior_var[m] / S + B_prior_mean[, m] * sigma_A_noise) / temp_var
+#     vairance_B <- B_prior_var[m] * sigma_A_noise / temp_var
+#
+#     bb <- rnorm(P)
+#     bb[which(bb - 3 > 0)] <- 3
+#     bb[which(bb + 3 < 0)] <- -3
+#
+#     B[, m] <- (bb * sqrt(abs(vairance_B)) + mean_B) * B_state[, m]
+#   }
+#
+#   return(B)
+# }
+#
+# #*************************** Peak-gene looping confidence estimation ***************************
+# Peak_gene_looping_L_samping <- function(R, R_sample, RNA_Cell_Sample_vector, TFA, B, L, L_state, L_prior_mean, L_prior_var, sigma_R_noise, P, G, M, S) {
+#   T_sample <- matrix(0, nrow = M, ncol = S)
+#   for (s in 1:S) {
+#     totake <- which(RNA_Cell_Sample_vector == s)
+#     if (length(totake) == 1) {
+#       T_sample[, s] <- TFA$T_sample[, totake]}
+#     else{
+#       T_sample[, s] <- rowMeans(TFA$T_R[, totake])
+#     }
+#   }
+#
+#   A_estimate <- B %*% TFA$T_sample
+#
+#   Peak_index <- sample(P)
+#   for (i in 1:P) {
+#     f <- Peak_index[i]
+#     temp_var <- sum(A_estimate[f, ]^2) * L_prior_var / S + sigma_R_noise
+#     mean_L <- (A_estimate[f, ] %*% t(R_sample - t(L) %*% A_estimate + L[f, ] %*% t(A_estimate[f, ])) * L_prior_var / S + L_prior_mean[f, ] * sigma_R_noise) / temp_var
+#     vairance_L <- L_prior_var * sigma_R_noise / temp_var
+#
+#     ll <- rnorm(G)
+#     ll[which(ll - 3 > 0)] <- 3
+#     ll[which(ll + 3 < 0)] <- -3
+#
+#     L[f, ] <- (ll * sqrt(vairance_L) + mean_L) * L_state[f, ]
+#   }
+#   return(L)
+# }
+#
+# #*************************** TF-peak binding state update ***************************
+# TF_peak_binary_binding_B_state_sampling <- function(A, A_sample, ATAC_Cell_Sample_vector, TFA,
+#                                                     B, B_state, B_prior_mean, B_prior_var, B_prior_prob, sigma_A_noise, P, G, M, S) {
+#   T_sample <- matrix(0, nrow = M, ncol = S)
+#   for (s in 1:S) {
+#     totake <- which(ATAC_Cell_Sample_vector == s)
+#     if (length(totake) == 1) {
+#       T_sample[, s] <- TFA$T_A[, totake]
+#     }else{
+#       T_sample[, s] <- rowMeans(TFA$T_A[, which(ATAC_Cell_Sample_vector == s)])
+#     }
+#   }
+#
+#   TF_index <- sample(M)
+#   Peak_index <- sample(P)
+#
+#   for (i in 1:P) {
+#     f <- Peak_index[i]
+#     temp <- t(B[f, ]) %*% TFA$T_sample
+#
+#     for (j in 1:M) {
+#       m <- TF_index[j]
+#
+#       temp_var <- sum(TFA$T_sample[m, ]^2) * B_prior_var[m] / S + sigma_A_noise
+#
+#       if (B_state[f, m] > 0) {
+#         mean_B <- (sum((A_sample[f, ] - temp + B[f, m] * TFA$T_sample[m, ]) * TFA$T_sample[m, ]) * B_prior_var[m] / S + B_prior_mean[f, m] * sigma_A_noise) / temp_var
+#
+#         vairance_B <- B_prior_var[m] * sigma_A_noise / temp_var
+#
+#         post_b1 <- exp(-(B[f, m] * 1 - mean_B)^2 / (2 * vairance_B)) * (B_prior_prob[f, m] + 0.25) + 1e-6
+#
+#         post_b0 <- exp(-(B[f, m] * 0 - mean_B)^2 / (2 * vairance_B)) * (1 - B_prior_prob[f, m] + 0.25) + 1e-6
+#
+#         P1 <- post_b1 / (post_b1 + post_b0)
+#
+#         threshold_c <- runif(1)
+#
+#         if (is.na(P1) || is.nan(P1)) {
+#           P1 <- 0.5
+#         }
+#
+#         if (P1 < threshold_c) {
+#           B[f, m] <- 0
+#           B_state[f, m] <- 0
+#         } else {
+#           B[f, m] <- B[f, m]
+#           B_state[f, m] <- 1
+#         }
+#       }
+#
+#       if (B_state[f, m] == 0 && B_prior_prob[f, m] > 0) {
+#         mean_B <- (sum((A_sample[f, ] - temp) * TFA$T_sample[m, ]) * B_prior_var[m] / S + B_prior_mean[f, m] * sigma_A_noise) / temp_var
+#         vairance_B <- B_prior_var[m] * sigma_A_noise / temp_var
+#
+#         bb <- rnorm(1)
+#
+#         if (bb - 3 > 0) {
+#           bb <- 3
+#         }
+#
+#         if (bb + 3 < 0) {
+#           bb <- -3
+#         }
+#
+#         B_temp <- bb * sqrt(abs(vairance_B)) + mean_B
+#
+#         post_b1 <- exp(-(bb^2) / 2) * (B_prior_prob[f, m] + 0.25) + 1e-6
+#
+#         post_b0 <- exp(-(mean_B)^2 / (2 * vairance_B)) * (1 - B_prior_prob[f, m] + 0.25) + 1e-6
+#
+#         P1 <- post_b1 / (post_b1 + post_b0)
+#
+#         threshold_c <- runif(1)
+#
+#         if (is.na(P1) || is.nan(P1)) {
+#           P1 <- 0.5
+#         }
+#
+#         if (P1 < threshold_c) {
+#           B[f, m] <- 0
+#           B_state[f, m] <- 0
+#         } else {
+#           B[f, m] <- B_temp
+#           B_state[f, m] <- 1
+#         }
+#       }
+#     }
+#   }
+#   Updated_B_and_State <- list("B" = B, "B_state" = B_state)
+#   return(Updated_B_and_State)
+# }
+# #*************************** Peak-gene looping state update ***************************
+# Peak_gene_binary_looping_L_state_samping <- function(R, R_sample, RNA_Cell_Sample_vector, TFA, B, L, L_state, L_prior_mean, L_prior_var, L_prior_prob, sigma_R_noise, P, G, M, S) {
+#   Peak_index <- sample(P)
+#   Gene_index <- sample(G)
+#
+#   T_sample <- matrix(0, nrow = M, ncol = S)
+#   for (s in 1:S) {
+#     totake <- which(RNA_Cell_Sample_vector == s)
+#     if (length(totake) == 1) {
+#       T_sample[, s] <- TFA$T_R[, totake]
+#     } else {
+#       T_sample[, s] <- rowMeans(TFA$T_R[, totake])
+#     }
+#   }
+#
+#
+#   A_estimate <- B %*% TFA$T_sample
+#
+#
+#   for (i in 1:G) {
+#     g <- Gene_index[i]
+#     temp <- L[, g] %*% A_estimate
+#
+#     for (j in 1:P) {
+#       f <- Peak_index[j]
+#       temp_var <- sum(A_estimate[f, ]^2) * L_prior_var / S + sigma_R_noise
+#
+#       if (L_state[f, g] > 0) {
+#         mean_L <- (sum((R_sample[g, ] - temp + L[f, g] * A_estimate[f, ]) * A_estimate[f, ]) * L_prior_var / S + L_prior_mean[f, g] * sigma_R_noise) / temp_var
+#         vairance_L <- L_prior_var * sigma_R_noise / temp_var
+#
+#         post_l1 <- exp(-(L[f, g] * 1 - mean_L)^2 / (2 * vairance_L)) * (L_prior_prob[f, g] + 0.25) + 1e-6
+#
+#         post_l0 <- exp(-(L[f, g] * 0 - mean_L)^2 / (2 * vairance_L)) * (1 - L_prior_prob[f, g] + 0.25) + 1e-6
+#
+#         P1 <- post_l1 / (post_l1 + post_l0)
+#
+#         threshold_c <- runif(1)
+#
+#         if (is.na(P1) || is.nan(P1)) {
+#           P1 <- 0.5
+#         }
+#
+#         if (P1 < threshold_c) {
+#           L[f, g] <- 0
+#           L_state[f, g] <- 0
+#         } else {
+#           L[f, g] <- L[f, g]
+#           L_state[f, g] <- 1
+#         }
+#       }
+#
+#       if (L_state[f, g] == 0 && L_prior_prob[f, g] > 0) {
+#         mean_L <- (sum((R_sample[g, ] - temp) * A_estimate[f, ]) * L_prior_var / S + L_prior_mean[f, g] * sigma_R_noise) / temp_var
+#         vairance_L <- L_prior_var * sigma_R_noise / temp_var
+#
+#         ll <- rnorm(1)
+#
+#         if (ll - 3 > 0) {
+#           ll <- 3
+#         }
+#         if (ll + 3 < 0) {
+#           ll <- -3
+#         }
+#
+#         L_temp <- ll * sqrt(abs(vairance_L)) + mean_L
+#
+#         post_l1 <- exp(-ll^2 / 2) * (L_prior_prob[f, g] + 0.1) + 1e-6
+#
+#         post_l0 <- exp(-(mean_L)^2 / (2 * vairance_L)) * (1 - L_prior_prob[f, g] + 0.1) + 1e-6
+#
+#         P1 <- post_l1 / (post_l1 + post_l0)
+#
+#         threshold_c <- runif(1)
+#
+#         if (is.na(P1) || is.nan(P1)) {
+#           P1 <- 0.5
+#         }
+#
+#         if (P1 < threshold_c) {
+#           L[f, g] <- 0
+#           L_state[f, g] <- 0
+#         } else {
+#           L[f, g] <- L_temp
+#           L_state[f, g] <- 1
+#         }
+#       }
+#     }
+#   }
+#   Updated_L_and_State <- list("L" = L, "L_state" = L_state)
+#   return(Updated_L_and_State)
+# }
 
 
 #' MCMC sampling
@@ -1015,6 +1017,164 @@ Peak_gene_binary_looping_L_state_samping <- function(R, R_sample, RNA_Cell_Sampl
 #'
 #' @export
 
+# MAGICAL_estimation <- function(loaded_data, Candidate_circuits, Initial_model, iteration_num) {
+#   Common_samples <- loaded_data$Common_samples
+#   S <- length(Common_samples) # number of samples
+#
+#   # ATAC data
+#   Peak_index <- match(Candidate_circuits$Peaks$Peak_index, loaded_data$scATAC_Peaks$Peak_index)
+#   A <- loaded_data$scATAC_read_count_matrix[Peak_index, ]
+#   ATAC_Cell_Sample_vector <- matrix(0, nrow = 1, ncol = nrow(loaded_data$scATAC_cells))
+#   for (s in 1:S) {
+#     ATAC_Cell_Sample_vector[which(loaded_data$scATAC_cells$subject_ID == Common_samples[s])] <- s
+#   } # ATAC cells of each sample
+#   A_sample <- Candidate_circuits$Peak_log2Count
+#   P <- length(Peak_index) # number of peaks
+#
+#
+#
+#   # RNA data
+#   Gene_index <- match(Candidate_circuits$Genes$Gene_symbols, loaded_data$scRNA_Genes$Gene_symbols)
+#   R <- loaded_data$scRNA_read_count_matrix[Gene_index, ]
+#   RNA_Cell_Sample_vector <- matrix(0, nrow = 1, ncol = nrow(loaded_data$scRNA_cells))
+#   for (s in 1:S) {
+#     RNA_Cell_Sample_vector[1, which(loaded_data$scRNA_cells$subject_ID == Common_samples[s])] <- s
+#   } # RNA cells of each sample
+#   R_sample <- Candidate_circuits$Gene_log2Count
+#   G <- length(Gene_index) # number of genes
+#
+#
+#   # TF-peak binding initial values
+#   B_prior_mean <- Initial_model$B_mean
+#   B_prior_var <- Initial_model$B_var
+#   B_prior_prob <- Initial_model$B_prob
+#   B <- Initial_model$B_prior
+#   B_state <- as.matrix(Candidate_circuits$TF_Peak_Binding)
+#
+#
+#
+#   # Peak-gene looping initial values
+#   L_prior_mean <- Initial_model$L_mean
+#   L_prior_var <- Initial_model$L_var
+#   L_prior_prob <- Initial_model$L_prob
+#   L <- Initial_model$L_prior
+#   L_state <- as.matrix(Candidate_circuits$Peak_Gene_looping)
+#
+#
+#
+#   # TFA initial values
+#   T_prior_mean <- Initial_model$T_mean
+#   T_prior_var <- Initial_model$T_var
+#   T_sample <- T_prior_mean
+#   M <- nrow(T_sample) # number of TFs
+#
+#   T_A <- matrix(0, nrow = nrow(Candidate_circuits$TFs), ncol = nrow(loaded_data$scATAC_cells))
+#   for (s in 1:S) {
+#     for (m in 1:M) {
+#       index <- which(ATAC_Cell_Sample_vector == s)
+#       T_A[m, index] <- rnorm(length(index), mean = T_prior_mean[m, s], sd = sqrt(abs(T_prior_var[m, s])))
+#     }
+#   } # initial values of the hidden TF activity of ATAC cells for each sample
+#
+#   T_R <- matrix(0, nrow = nrow(Candidate_circuits$TFs), ncol = nrow(loaded_data$scRNA_cells))
+#   for (s in 1:S) {
+#     for (m in 1:M) {
+#       index <- which(RNA_Cell_Sample_vector == s)
+#       T_R[m, index] <- rnorm(length(index), mean = T_prior_mean[m, s], sd = sqrt(abs(T_prior_var[m, s])))
+#     }
+#   } # initial values of the hidden TF activity of RNA cells for each sample
+#
+#   TFA <- list("T_A" = T_A, "T_R" = T_R, "T_sample" = T_sample)
+#
+#
+#
+#   # ATAC fitting residual variance initial values
+#   alpha_A <- 1
+#   beta_A <- 1
+#   sigma_A_noise <- 1 / rgamma(1, shape = alpha_A + 1 / 2, rate = (beta_A + sum((A_sample - B %*% TFA$T_sample)^2)) / (2 * P * S))
+#
+#
+#
+#   # RNA fitting residual variance initial values
+#   alpha_R <- 1
+#   beta_R <- 1
+#   sigma_R_noise <- 1 / rgamma(1, shape = alpha_R + 1 / 2, scale = 1 / ((beta_R + sum((R_sample - t(L) %*% (B %*% TFA$T_sample))^2)) / (2 * G * S)))
+#
+#
+#
+#   # MCMC sampling initial state
+#   iteration_seg <- round(iteration_num / 10)
+#   B_state_frq <- B_state
+#   L_state_frq <- L_state
+#
+#   print("MAGICAL integration starts ...")
+#   cat("\n")
+#
+#
+#   Noise_parameters <- matrix(0, nrow = iteration_num, ncol = 2)
+#   for (i in 1:iteration_num) {
+#     # Step 1: TF activity sampling
+#     TFA <- TF_activity_T_sampling(
+#       A, A_sample, ATAC_Cell_Sample_vector, R, R_sample, RNA_Cell_Sample_vector,
+#       TFA, T_prior_mean, T_prior_var, B, B_state, sigma_A_noise, P, G, M, S
+#     )
+#
+#
+#     # Step 2: TF-peak binding weight sampling
+#     B <- TF_peak_binding_B_sampling(
+#       A, A_sample, ATAC_Cell_Sample_vector, TFA,
+#       B, B_state, B_prior_mean, B_prior_var, sigma_A_noise, P, G, M, S
+#     )
+#
+#
+#     # Step 3: TF-peak binding state update
+#     Updated_B_and_State <- TF_peak_binary_binding_B_state_sampling(
+#       A, A_sample, ATAC_Cell_Sample_vector,
+#       TFA, B, B_state, B_prior_mean, B_prior_var, B_prior_prob,
+#       sigma_A_noise, P, G, M, S
+#     )
+#     B <- Updated_B_and_State$B
+#     B_state <- Updated_B_and_State$B_state
+#     B_state_frq <- B_state_frq + B_state
+#
+#
+#     # Step 4: Peak-Gene looping weight sampling
+#     L <- Peak_gene_looping_L_samping(R, R_sample, RNA_Cell_Sample_vector, TFA, B, L, L_state, L_prior_mean, L_prior_var, sigma_R_noise, P, G, M, S)
+#
+#
+#     # Step 5: Peak-Gene looping state update
+#     Updated_L_and_State <- Peak_gene_binary_looping_L_state_samping(R, R_sample, RNA_Cell_Sample_vector, TFA, B, L, L_state, L_prior_mean, L_prior_var, L_prior_prob, sigma_R_noise, P, G, M, S)
+#     L <- Updated_L_and_State$L
+#     L_state <- Updated_L_and_State$L_state
+#     L_state_frq <- L_state_frq + L_state
+#
+#
+#     # Step 6: fitting residue variance control
+#     sigma_A_noise <- 1 / rgamma(1, shape = alpha_A + 1 / 2, rate = (beta_A + sum((A_sample - B %*% TFA$T_sample)^2)) / (2 * P * S))
+#
+#     sigma_R_noise <- 1 / rgamma(1, shape = alpha_R + 1 / 2, rate = (beta_R + sum((R_sample - t(L) %*% (B %*% TFA$T_sample))^2)) / (2 * G * S))
+#
+#     Noise_parameters[i, 1] <- sigma_A_noise
+#     Noise_parameters[i, 2] <- sigma_R_noise
+#
+#     if (i %% iteration_seg == 0) {
+#       print(paste("MAGICAL finished", 10 * i / iteration_seg, "percent", sep = " "))
+#       cat("\n")
+#     }
+#   }
+#
+#   # Sample Summary
+#   Candidate_TF_Peak_Binding_prob <- B_state_frq / (iteration_num + 1)
+#   Candidate_Peak_Gene_Looping_prob <- L_state_frq / (iteration_num + 1)
+#
+#   Circuits_linkage_posterior <- list(
+#     "TF_Peak_Binding_prob" = Candidate_TF_Peak_Binding_prob,
+#     "Peak_Gene_Looping_prob" = Candidate_Peak_Gene_Looping_prob,
+#     "Noise_parameters" = Noise_parameters
+#   )
+#
+#   return(Circuits_linkage_posterior)
+# }
 MAGICAL_estimation <- function(loaded_data, Candidate_circuits, Initial_model, iteration_num) {
   Common_samples <- loaded_data$Common_samples
   S <- length(Common_samples) # number of samples
@@ -1029,8 +1189,6 @@ MAGICAL_estimation <- function(loaded_data, Candidate_circuits, Initial_model, i
   A_sample <- Candidate_circuits$Peak_log2Count
   P <- length(Peak_index) # number of peaks
 
-
-
   # RNA data
   Gene_index <- match(Candidate_circuits$Genes$Gene_symbols, loaded_data$scRNA_Genes$Gene_symbols)
   R <- loaded_data$scRNA_read_count_matrix[Gene_index, ]
@@ -1041,7 +1199,6 @@ MAGICAL_estimation <- function(loaded_data, Candidate_circuits, Initial_model, i
   R_sample <- Candidate_circuits$Gene_log2Count
   G <- length(Gene_index) # number of genes
 
-
   # TF-peak binding initial values
   B_prior_mean <- Initial_model$B_mean
   B_prior_var <- Initial_model$B_var
@@ -1049,16 +1206,12 @@ MAGICAL_estimation <- function(loaded_data, Candidate_circuits, Initial_model, i
   B <- Initial_model$B_prior
   B_state <- as.matrix(Candidate_circuits$TF_Peak_Binding)
 
-
-
   # Peak-gene looping initial values
   L_prior_mean <- Initial_model$L_mean
   L_prior_var <- Initial_model$L_var
   L_prior_prob <- Initial_model$L_prob
   L <- Initial_model$L_prior
   L_state <- as.matrix(Candidate_circuits$Peak_Gene_looping)
-
-
 
   # TFA initial values
   T_prior_mean <- Initial_model$T_mean
@@ -1084,21 +1237,15 @@ MAGICAL_estimation <- function(loaded_data, Candidate_circuits, Initial_model, i
 
   TFA <- list("T_A" = T_A, "T_R" = T_R, "T_sample" = T_sample)
 
-
-
   # ATAC fitting residual variance initial values
   alpha_A <- 1
   beta_A <- 1
   sigma_A_noise <- 1 / rgamma(1, shape = alpha_A + 1 / 2, rate = (beta_A + sum((A_sample - B %*% TFA$T_sample)^2)) / (2 * P * S))
 
-
-
   # RNA fitting residual variance initial values
   alpha_R <- 1
   beta_R <- 1
   sigma_R_noise <- 1 / rgamma(1, shape = alpha_R + 1 / 2, scale = 1 / ((beta_R + sum((R_sample - t(L) %*% (B %*% TFA$T_sample))^2)) / (2 * G * S)))
-
-
 
   # MCMC sampling initial state
   iteration_seg <- round(iteration_num / 10)
@@ -1108,48 +1255,50 @@ MAGICAL_estimation <- function(loaded_data, Candidate_circuits, Initial_model, i
   print("MAGICAL integration starts ...")
   cat("\n")
 
-
   Noise_parameters <- matrix(0, nrow = iteration_num, ncol = 2)
   for (i in 1:iteration_num) {
     # Step 1: TF activity sampling
-    TFA <- TF_activity_T_sampling(
-      A, A_sample, ATAC_Cell_Sample_vector, R, R_sample, RNA_Cell_Sample_vector,
-      TFA, T_prior_mean, T_prior_var, B, B_state, sigma_A_noise, P, G, M, S
-    )
-
+    .C("TF_activity_T_sampling",
+       as.double(A), as.double(A_sample), as.integer(ATAC_Cell_Sample_vector),
+       as.double(R), as.double(R_sample), as.integer(RNA_Cell_Sample_vector),
+       as.double(TFA$T_sample), as.double(TFA$T_A), as.double(TFA$T_R),
+       as.double(T_prior_mean), as.double(T_prior_var), as.double(B), as.integer(B_state),
+       as.double(sigma_A_noise), as.integer(P), as.integer(G), as.integer(M), as.integer(S))
 
     # Step 2: TF-peak binding weight sampling
-    B <- TF_peak_binding_B_sampling(
-      A, A_sample, ATAC_Cell_Sample_vector, TFA,
-      B, B_state, B_prior_mean, B_prior_var, sigma_A_noise, P, G, M, S
-    )
-
+    .C("TF_peak_binding_B_sampling",
+       as.double(A), as.double(A_sample), as.integer(ATAC_Cell_Sample_vector),
+       as.double(TFA$T_sample), as.double(TFA$T_A), as.double(TFA$T_sample),
+       as.double(B), as.integer(B_state), as.double(B_prior_mean),
+       as.double(B_prior_var), as.double(sigma_A_noise), as.integer(P), as.integer(G),
+       as.integer(M), as.integer(S))
 
     # Step 3: TF-peak binding state update
-    Updated_B_and_State <- TF_peak_binary_binding_B_state_sampling(
-      A, A_sample, ATAC_Cell_Sample_vector,
-      TFA, B, B_state, B_prior_mean, B_prior_var, B_prior_prob,
-      sigma_A_noise, P, G, M, S
-    )
-    B <- Updated_B_and_State$B
-    B_state <- Updated_B_and_State$B_state
-    B_state_frq <- B_state_frq + B_state
-
+    .C("TF_peak_binary_binding_B_state_sampling",
+       as.double(A), as.double(A_sample), as.integer(ATAC_Cell_Sample_vector),
+       as.double(TFA$T_A), as.double(TFA$T_sample),
+       as.double(B), as.integer(B_state), as.double(B_prior_mean),
+       as.double(B_prior_var), as.double(B_prior_prob), as.double(sigma_A_noise),
+       as.integer(P), as.integer(G), as.integer(M), as.integer(S))
 
     # Step 4: Peak-Gene looping weight sampling
-    L <- Peak_gene_looping_L_samping(R, R_sample, RNA_Cell_Sample_vector, TFA, B, L, L_state, L_prior_mean, L_prior_var, sigma_R_noise, P, G, M, S)
-
+    .C("Peak_gene_looping_L_sampling",
+       as.double(R), as.double(R_sample), as.integer(RNA_Cell_Sample_vector),
+       as.double(TFA$T_sample), as.double(TFA$T_R), as.double(B),
+       as.double(L), as.integer(L_state), as.double(L_prior_mean),
+       as.double(L_prior_var), as.double(sigma_R_noise), as.integer(P),
+       as.integer(G), as.integer(M), as.integer(S))
 
     # Step 5: Peak-Gene looping state update
-    Updated_L_and_State <- Peak_gene_binary_looping_L_state_samping(R, R_sample, RNA_Cell_Sample_vector, TFA, B, L, L_state, L_prior_mean, L_prior_var, L_prior_prob, sigma_R_noise, P, G, M, S)
-    L <- Updated_L_and_State$L
-    L_state <- Updated_L_and_State$L_state
-    L_state_frq <- L_state_frq + L_state
-
+    .C("Peak_gene_binary_looping_L_state_sampling",
+       as.double(R), as.double(R_sample), as.integer(RNA_Cell_Sample_vector),
+       as.double(TFA$T_R), as.double(TFA$T_sample), as.double(B), as.double(L),
+       as.integer(L_state), as.double(L_prior_mean), as.double(L_prior_var),
+       as.double(L_prior_prob), as.double(sigma_R_noise), as.integer(P),
+       as.integer(G), as.integer(M), as.integer(S))
 
     # Step 6: fitting residue variance control
     sigma_A_noise <- 1 / rgamma(1, shape = alpha_A + 1 / 2, rate = (beta_A + sum((A_sample - B %*% TFA$T_sample)^2)) / (2 * P * S))
-
     sigma_R_noise <- 1 / rgamma(1, shape = alpha_R + 1 / 2, rate = (beta_R + sum((R_sample - t(L) %*% (B %*% TFA$T_sample))^2)) / (2 * G * S))
 
     Noise_parameters[i, 1] <- sigma_A_noise
