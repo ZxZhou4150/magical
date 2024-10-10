@@ -3,7 +3,6 @@
 export(Candidate_circuits_construction_with_TAD)
 export(Candidate_circuits_construction_without_TAD)
 export(Data_loading)
-export(Data_loading_from_workspace)
 export(MAGICAL_circuits_output)
 export(MAGICAL_estimation)
 export(MAGICAL_initialization)

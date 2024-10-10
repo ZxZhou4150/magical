@@ -2,7 +2,6 @@
 #'
 #' Load data from files.
 #'
-#' @seealso [Data_loading_from_workspace()]
 #'
 #' @param Candidate_gene_file_path,Candidate_peak_file_path paths to pre-selected candidate genes and peaks for the cell type
 #' @param scRNA_readcount_file_path,scRNA_gene_file_path,scRNA_cellmeta_file_path paths to filtered scRNA data of the cell type
@@ -143,65 +142,6 @@ Data_loading <- function(Candidate_Gene_file_path, Candidate_Peak_file_path,
     "Motifs" = Motifs,
     "TF_Peak_binding_matrix" = TF_Peak_binding_matrix,
     "Refseq" = Refseq
-  )
-
-  return(loaded_data)
-}
-
-#' Loading Data
-#'
-#' Load data from workspace.
-#'
-#' @seealso [Data_loading()] for loading data from files.
-#'
-#'
-#' @return A list named "loaded_data" containing the following elements:
-#' * Common_samples: a vector of common samples between scRNA and scATAC data
-#' * Candidate_Genes: a data frame of candidate genes
-#' * Candidate_Peaks: a data frame of candidate peaks
-#' * scRNA_Genes: a data frame of scRNA genes
-#' * scRNA_cells: a data frame of scRNA cells
-#' * scRNA_read_count_matrix: a sparse matrix of scRNA read counts
-#' * scATAC_Peaks: a data frame of scATAC peaks
-#' * scATAC_cells: a data frame of scATAC cells
-#' * scATAC_read_count_matrix: a sparse matrix of scATAC read counts
-#' * Motifs: a data frame of TF motifs
-#' * TF_peak_binding_matrix: a sparse matrix of TF binding on ATAC peaks
-#' * Refseq: a data frame of Refseq
-#'
-#' @import Matrix
-#' @importFrom Matrix colSums rowSums sparseMatrix as.matrix
-#'
-#' @export
-Data_loading_from_workspace <- function(Candidate_Genes, Candidate_Peaks, scRNA_Genes, scRNA_cells, scRNA_read_count_matrix, scATAC_Peaks, scATAC_cells, scATAC_read_count_matrix, Motifs, TF_Peak_binding_matrix, Refseq) {
-  colnames(Candidate_Genes) <- c("Gene_symbols")
-  colnames(scRNA_Genes) <- c("Gene_index", "Gene_symbols")
-  colnames(scRNA_cells) <- c("cell_index", "cell_barcode", "cell_type", "subject_ID", "condition")
-
-  colnames(Candidate_Peaks) <- c("chr", "point1", "point2")
-  colnames(scATAC_Peaks) <- c("Peak_index", "chr", "point1", "point2")
-  colnames(scATAC_cells) <- c("cell_index", "cell_barcode", "cell_type", "subject_ID")
-
-  colnames(Motifs) <- c("motif_index", "name")
-  colnames(Refseq) <- c("chr", "strand", "start", "end", "Gene_symbols")
-
-  scATAC_samples <- unique(scATAC_cells$subject_ID)
-  scRNA_samples <- unique(scRNA_cells$subject_ID)
-  Common_samples <- intersect(scRNA_samples, scATAC_samples)
-
-  loaded_data <- list(
-    "Common_samples" = Common_samples,
-    "Candidate_Genes" = data.frame(Candidate_Genes),
-    "Candidate_Peaks" = data.frame(Candidate_Peaks),
-    "scRNA_Genes" = data.frame(scRNA_Genes),
-    "scRNA_cells" = data.frame(scRNA_cells),
-    "scRNA_read_count_matrix" = as(scRNA_read_count_matrix, "TsparseMatrix"),
-    "scATAC_Peaks" = data.frame(scATAC_Peaks),
-    "scATAC_cells" = data.frame(scATAC_cells),
-    "scATAC_read_count_matrix" = as(scATAC_read_count_matrix,"TsparseMatrix"),
-    "Motifs" = data.frame(Motifs),
-    "TF_Peak_binding_matrix" = as(TF_Peak_binding_matrix,"TsparseMatrix"),
-    "Refseq" = data.frame(Refseq)
   )
 
   return(loaded_data)

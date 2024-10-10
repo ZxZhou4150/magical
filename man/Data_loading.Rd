@@ -49,6 +49,3 @@ A list named "loaded_data" containing the following elements:
 \description{
 Load data from files.
 }
-\seealso{
-\code{\link[=Data_loading_from_workspace]{Data_loading_from_workspace()}}
-}
