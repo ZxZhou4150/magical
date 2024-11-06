@@ -714,7 +714,7 @@ TF_peak_binding_B_sampling <- function(A, A_sample, ATAC_Cell_Sample_vector, TFA
     bb[which(bb - 3 > 0)] <- 3
     bb[which(bb + 3 < 0)] <- -3
 
-    B[, m] <- (bb * sqrt(abs(vairance_B)) + mean_B) * B_state[, m]
+    B[, m] <- as.vector((bb * sqrt(abs(vairance_B)) + mean_B) * B_state[, m])
   }
 
   return(B)
@@ -745,7 +745,7 @@ Peak_gene_looping_L_samping <- function(R, R_sample, RNA_Cell_Sample_vector, TFA
     ll[which(ll - 3 > 0)] <- 3
     ll[which(ll + 3 < 0)] <- -3
 
-    L[f, ] <- (ll * sqrt(vairance_L) + mean_L) * L_state[f, ]
+    L[f, ] <- as.vector((ll * sqrt(vairance_L) + mean_L) * L_state[f, ])
   }
   return(L)
 }
