@@ -72,8 +72,19 @@ scATAC <- AddMotifs(object = scATAC, genome = BSgenome.Hsapiens.UCSC.hg38, pfm =
 Peak_motif_mapping  = as(scATAC@assays$ATAC@motifs@data, "dgTMatrix")
 write.table(summary(Peak_motif_mapping), file='Motif mapping prior.txt',
             quote = FALSE, row.names = FALSE, col.names = FALSE,  sep = '\t')
-write.table(Peak_motif_mapping@Dimnames[[2]], file = 'Motifs.txt', quote = FALSE, col.names = FALSE,  sep = '\t')
 #make sure to check the motif name file to clean up the names and use the standard gene symbol for each motif
+Motifs <- Peak_motif_mapping@Dimnames[[2]]
+Motifs <- sapply(Motifs, function(x) {
+  splt <- strsplit(x, split = "_")
+  if (grepl("ENSG", splt[[1]][1])) {
+    splt[[1]][3]
+  } else {
+    splt[[1]][4]
+  }
+}) # sample codes for conversion to gene names
+rownames(Motifs) <- seq_len(nrow(Motifs))
+write.table(Motifs, file = "Motifs.txt", quote = F, col.names = F)
+
 
 
 
@@ -101,7 +112,7 @@ write.table(Peaks[,1], file = 'scATAC peaks.txt', quote = FALSE, col.names = FAL
 Cell_type_scATAC_counts<-getMatrixFromProject(ArchRProj = proj_temp, useMatrix = "PeakMatrix", useSeqnames = NULL,
                                 verbose = TRUE,binarize = FALSE,threads = getArchRThreads(),
                                 logFile = createLogFile("getMatrixFromProject"))
-write.table(summary(Cell_type_scATAC_counts@assays@data@listData$PeakMatrix), 
+write.table(summary(Cell_type_scATAC_counts@assays@data@listData$PeakMatrix),
             file='Cell type scATAC read count.txt',
             quote = FALSE, row.names = FALSE, col.names = FALSE,  sep = '\t')
 
@@ -114,11 +125,21 @@ write.table(data.frame(proj_temp$cellNames, proj_temp$Cell_type_voting, proj_tem
 
 #TF motif mapping
 proj_temp <- addMotifAnnotations(ArchRProj = proj_temp, motifSet = "cisbp", name = "Motif")
-#Different from Signac, motif match in ArchR is not stored in the data space, 
+#Different from Signac, motif match in ArchR is not stored in the data space,
 #instead, a Motif-Matches-In-Peaks.rds file will be created under the Annotations folder
 Peak_motif_mapping <- readRDS(file = "~/Desktop/ECHO/Staph/Staph_scATAC_integration/Annotations/Motif-Matches-In-Peaks.rds")
 write.table(lapply(summary(Peak_motif_mapping@assays@data@listData$matches), as.numeric), file='Motif mapping prior.txt',
             quote = FALSE, row.names = FALSE, col.names = FALSE,  sep = '\t')
-write.table(Peak_motif_mapping@assays@data@listData$matches@Dimnames[[2]], file = 'Motifs.txt', quote = FALSE, col.names = FALSE,  sep = '\t')
 #make sure to check the motif name file to clean up the names and use the standard gene symbol for each motif
+Motifs <- Peak_motif_mapping@assays@data@listData$matches@Dimnames[[2]]
+Motifs <- sapply(Motifs, function(x) {
+  splt <- strsplit(x, split = "_")
+  if (grepl("ENSG", splt[[1]][1])) {
+    splt[[1]][3]
+  } else {
+    splt[[1]][4]
+  }
+}) # sample codes for conversion to gene names
+rownames(Motifs) <- seq_len(nrow(Motifs))
+write.table(Motifs, file = "Motifs.txt", quote = F, col.names = F)
 
