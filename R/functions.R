@@ -1120,8 +1120,8 @@ MAGICAL_estimation <- function(loaded_data, Candidate_circuits, Initial_model, i
 #' @param Output_file_path The output file path
 #' @param Candidate_circuits The output from "Candidate_circuits" (with or without TAD)
 #' @param Circuits_linkage_posterior The output from `MAGICAL_estimation`
-#' @param prob_threshold_TF_peak_binding The threshold of TF-peak binding probability. Default is 0.8
-#' @param prob_threshold_peak_gene_looping The threshold of peak-gene looping probability. Default is 0.95
+#' @param prob_threshold_TF_peak_binding The threshold of TF-peak binding probability. Default is 0.7
+#' @param prob_threshold_peak_gene_looping The threshold of peak-gene looping probability. Default is 0.85
 #'
 #' @return There is no return value for this function, but it will write a file with this format: Gene_symbol - Gene_chr - Gene_TSS - Peak_chr - Peak_start - Peak_end - Looping_prob - TFs(binding prob)
 #'
@@ -1130,7 +1130,7 @@ MAGICAL_estimation <- function(loaded_data, Candidate_circuits, Initial_model, i
 #'
 #' @export
 MAGICAL_circuits_output <- function(Output_file_path, Candidate_circuits, Circuits_linkage_posterior,
-                                    prob_threshold_TF_peak_binding = 0.8, prob_threshold_peak_gene_looping = 0.95) {
+                                    prob_threshold_TF_peak_binding = 0.7, prob_threshold_peak_gene_looping = 0.85) {
   Peak_Gene_index <- which(Circuits_linkage_posterior$Peak_Gene_Looping_prob > prob_threshold_peak_gene_looping, arr.ind = TRUE)
   circuit_flag <- matrix(0, nrow = nrow(Peak_Gene_index), ncol = 1)
   writeLines("Gene_symbol\tGene_chr\tGene_TSS\tPeak_chr\tPeak_start\tPeak_end\tLooping_prob\tTFs(binding prob)\n", Output_file_path)
