@@ -4,8 +4,8 @@
 #' 
 #' @param RNA_counts RNA counts matrix. One row is one gene and one col is one spot.
 #' @param ATAC_counts ATAC counts matrix. One row is one peak and one col is on spot.
-#' @param niche_label The niche label matrix of DAVINCI output. Rownames must match colnames of the count matrices.
-#' @param meta_add Additional meta data to add to the Seurat object. Rownames must match that of `niche_label`.
+#' @param niche_label The niche label array of DAVINCI output. Names must match colnames of the count matrices.
+#' @param meta_add Additional meta data to add to the Seurat object. Rownames must match colnames of the count matrices.
 #' @param pb Logic, pseudo-bulk level or not.
 #' @param contrast Niche- or condition-specific contrast
 #' @param niche1 (Required for all cases) For `contrast = "niche"`, this should be one niche you want to contrast. For `contrast = "condition"`, this should be the niche in which you want to contrast the conditions
@@ -17,6 +17,7 @@
 #' @param log2fc_thre Threshold of average log 2 fold change (avg_log2FC). Default is 0.3.
 #' @param magical To perform downstream MAGICAL analysis or not. Default is `T`.
 #' @param Ref_seq_file_path Path to the Refseq file for transcription starting site extraction
+#' @param genome The genome for searching TF binding motifs. Default is `"hg38"`.
 #' @param meta_spot_opt To run MAGICAL at meta-spot level or not. Default is `F`.
 #' @param method How would you like to construct meta spots. Could be simple random, or based on the similarity of some features.
 #' @param size The number of spots to be in one meta-spot
@@ -28,18 +29,18 @@
 #' @param ... Other parameters
 #' 
 #' @return A list of filtered data.frames in the form of the result of `Seurat::FindMarkers()`. The MAGICAL results are not returned but written into files.
-wrapper_main = function(RNA_counts, ATAC_counts, niche_label, meta_add=NULL, pb, contrast = c("niche","condition"), niche1=NULL, niche2 = NULL, condition=NULL, condition1 = NULL, condition2 = NULL, p_thre = 0.05, log2fc_thre = 0.3, magical, Ref_seq_file_path, meta_spot_opt = F, method = c("simple_random", "feature"), size = 20, feature, TAD_file_path, dc = 5e5, iteration_num, Output_file_path = 'MAGICAL_selected_regulatory_circuits.txt', ...){
+wrapper_main = function(RNA_counts, ATAC_counts, niche_label, meta_add=NULL, pb, contrast = c("niche","condition"), niche1=NULL, niche2 = NULL, condition=NULL, condition1 = NULL, condition2 = NULL, p_thre = 0.05, log2fc_thre = 0.3, magical, Ref_seq_file_path, genome = "hg38", meta_spot_opt = F, method = c("simple_random", "feature"), size = 20, feature, TAD_file_path, dc = 5e5, iteration_num, Output_file_path = 'MAGICAL_selected_regulatory_circuits.txt', ...){
   ## step 1: differential analysis
-  nslice = length(unique(obj$slice))
-  if(nslice < 10){
+  nsample = length(unique(obj$sample))
+  if(nsample < 10){
     pb = F
-    print("There are less than 10 slices. Spot level differential analysis will be applied.")
+    print("There are less than 10 samples. Spot level differential analysis will be applied.")
   }else{
     if(exists("pb") && (pb == F)){
-      print("You are setting `pb = F`. There are more than 10 slices. Pseudo-bulk level differential analysis is recommended.")
+      print("You are setting `pb = F`. There are more than 10 samples. Pseudo-bulk level differential analysis is recommended.")
     }else{
       pb = T  
-      print("There are 10 or more slices. Pseudo-bulk level differential analysis will be applied. You can change to spot level by setting `pb = F`.")
+      print("There are 10 or more samples. Pseudo-bulk level differential analysis will be applied. You can change to spot level by setting `pb = F`.")
     }
   }
   differentials = differential(RNA_counts, ATAC_counts, niche_label, meta_add, pb, contrast, niche1, niche2, condition, condition1, condition2, p_thre, log2fc_thre, ...)
@@ -89,37 +90,37 @@ differential = function(RNA_counts, ATAC_counts, niche_label, meta_add=NULL, pb,
   #### check the input format
   #### test if metadata have those columns
   
-  RNA_counts = RNA_counts[,rownames(niche_label)]
-  ATAC_counts = ATAC_counts[,rownames(niche_label)]
+  RNA_counts = RNA_counts[,names(niche_label)]
+  ATAC_counts = ATAC_counts[,names(niche_label)]
   
   if(pb == T){
     ## build a Seurat object at pseudo-bulk level
     # aggregate counts
-    spots_niche1id = which(niche_label$Cluster == niche1)
+    spots_niche1id = which(niche_label == niche1)
     if(contrast =="niche"){
       RNA_niche1 = RNA_counts[,spots_niche1id]
       ATAC_niche1 = ATAC_counts[,spots_niche1id]
-      meta_niche1 = niche_label[spots_niche1id,"slice"]
+      meta_niche1 = meta_add[spots_niche1id,"sample"]
       if(is.null(niche2)){
         niche2 = paste0("non_",niche1)
         RNA_niche2 = RNA_counts[,-spots_niche1id]
         ATAC_niche2 = ATAC_counts[,-spots_niche1id]
-        meta_niche2 = niche_label[-spots_niche1id,"slice"]
+        meta_niche2 = meta_add[-spots_niche1id,"sample"]
       }else{
-        spots_niche2id = which(niche_label$Cluster == niche2)
+        spots_niche2id = which(niche_label == niche2)
         RNA_niche2 = RNA_counts[,spots_niche2id]
         ATAC_niche2 = ATAC_counts[,spots_niche2id]
-        meta_niche2 = niche_label[spots_niche2id,"slice"]
+        meta_niche2 = meta_add[spots_niche2id,"sample"]
       }
       
       # aggregate to pb
-      slice_df1 = data.frame(spot = names(meta_niche1), slice = meta_niche1)
-      RNA_agg1 = aggregate_to_pb(slice_df1, RNA_niche1)
-      ATAC_agg1 = aggregate_to_pb(slice_df1,ATAC_niche1)
+      sample_df1 = data.frame(spot = names(meta_niche1), sample = meta_niche1)
+      RNA_agg1 = aggregate_to_pb(sample_df1, RNA_niche1)
+      ATAC_agg1 = aggregate_to_pb(sample_df1,ATAC_niche1)
       
-      slice_df2 = data.frame(spot = names(meta_niche2), slice = meta_niche2)
-      RNA_agg2 = aggregate_to_pb(slice_df2, RNA_niche2)
-      ATAC_agg2 = aggregate_to_pb(slice_df2,ATAC_niche2)
+      sample_df2 = data.frame(spot = names(meta_niche2), sample = meta_niche2)
+      RNA_agg2 = aggregate_to_pb(sample_df2, RNA_niche2)
+      ATAC_agg2 = aggregate_to_pb(sample_df2,ATAC_niche2)
       
       RNA = cbind(RNA_agg1, RNA_agg2)
       ATAC = cbind(ATAC_agg1, ATAC_agg2)
@@ -127,7 +128,7 @@ differential = function(RNA_counts, ATAC_counts, niche_label, meta_add=NULL, pb,
       # new metadata
       metadata = data.frame(
         spot = colnames(RNA),
-        slice = c(unique(meta_niche1),unique(meta_niche2)),
+        sample = c(unique(meta_niche1),unique(meta_niche2)),
         niche = rep(c(niche1,niche2),each = length(unique(meta_niche1)))
       )
       
@@ -146,34 +147,34 @@ differential = function(RNA_counts, ATAC_counts, niche_label, meta_add=NULL, pb,
     }else if(contrast == "condition"){
       RNA_counts_totake = RNA_counts[,spots_niche1id]
       ATAC_counts_totake = ATAC_counts[,spots_niche1id]
-      niche_label_totake = niche_label[spots_niche1id,]
+      niche_label_totake = niche_label[spots_niche1id]
       meta_add_totake = meta_add[spots_niche1id,]
       
       spots_condition1id = which(meta_add_totake[[condition]] == condition1)
       
       RNA_condition1 = RNA_counts_totake[,spots_condition1id]
       ATAC_condition1 = ATAC_counts_totake[,spots_condition1id]
-      meta_condition1 = niche_label[spots_condition1id,"slice"]
+      meta_condition1 = meta_add[spots_condition1id,"sample"]
       if(is.null(condition2)){
         condition2 = paste0("non_",condition1)
         RNA_condition2 = RNA_counts_totake[,-spots_condition1id]
         ATAC_condition2 = ATAC_counts_totake[,-spots_condition1id]
-        meta_condition2 = niche_label[-spots_condition1id,"slice"]
+        meta_condition2 = meta_add[-spots_condition1id,"sample"]
       }else{
         spots_condition2id = which(meta_add[[condition]] == condition2)
         RNA_condition2 = RNA_counts_totake[,spots_condition2id]
         ATAC_condition2 = ATAC_counts_totake[,spots_condition2id]
-        meta_condition2 = niche_label[spots_condition2id,"slice"]
+        meta_condition2 = meta_add[spots_condition2id,"sample"]
       }
       
       # aggregate to pb
-      slice_df1 = data.frame(spot = names(meta_condition1), slice = meta_condition1)
-      RNA_agg1 = aggregate_to_pb(slice_df1, RNA_condition1)
-      ATAC_agg1 = aggregate_to_pb(slice_df1,ATAC_condition1)
+      sample_df1 = data.frame(spot = names(meta_condition1), sample = meta_condition1)
+      RNA_agg1 = aggregate_to_pb(sample_df1, RNA_condition1)
+      ATAC_agg1 = aggregate_to_pb(sample_df1,ATAC_condition1)
       
-      slice_df2 = data.frame(spot = names(meta_condition2), slice = meta_condition2)
-      RNA_agg2 = aggregate_to_pb(slice_df2, RNA_condition2)
-      ATAC_agg2 = aggregate_to_pb(slice_df2,ATAC_condition2)
+      sample_df2 = data.frame(spot = names(meta_condition2), sample = meta_condition2)
+      RNA_agg2 = aggregate_to_pb(sample_df2, RNA_condition2)
+      ATAC_agg2 = aggregate_to_pb(sample_df2,ATAC_condition2)
       
       RNA = cbind(RNA_agg1, RNA_agg2)
       ATAC = cbind(ATAC_agg1, ATAC_agg2)
@@ -225,10 +226,10 @@ aggregate_to_pb = function(meta, mtx){
     mutate(spot = rownames(.)) %>%
     left_join(meta, by = "spot") %>%
     select(-spot) %>%
-    group_by(slice) %>%
+    group_by(sample) %>%
     summarise(across(everything(), sum, .names = "{.col}")) %>%
     as.data.frame()
-  rownames(agg_mtx) = agg_mtx$slice
+  rownames(agg_mtx) = agg_mtx$sample
   agg_mtx = t(as.matrix(agg_mtx[,-1]))
   return(agg_mtx)
 }
@@ -241,8 +242,8 @@ aggregate_to_pb = function(meta, mtx){
 #' @param das Differentially associated sites (peaks)
 #' @param RNA_counts RNA counts matrix. One row is one gene and one col is one spot.
 #' @param ATAC_counts ATAC counts matrix. One row is one peak and one col is on spot.
-#' @param niche_label The niche label matrix of DAVINCI output. Rownames must match colnames of the count matrices.
-#' @param meta_add Additional meta data to add to the Seurat object. Rownames must match that of `niche_label`.
+#' @param niche_label The niche label array of DAVINCI output. Names must match colnames of the count matrices.
+#' @param meta_add Additional meta data to add to the Seurat object. Rownames must match colnames of the count matrices.
 #' @param Ref_seq_file_path Path to the Refseq file for transcription starting site extraction
 #' @param genome The genome for searching TF binding motifs. Default is `"hg38"`.
 #' @param meta_spot_opt To run MAGICAL at meta-spot level or not. Default is `F`.
@@ -265,28 +266,28 @@ aggregate_to_pb = function(meta, mtx){
 #' @import chromVARmotifs
 #'
 #' @export
-prepare_magical_object = function(deg, das, RNA_counts, ATAC_counts, niche_label, meta_add, Ref_seq_file_path, genome= "hg38", meta_spot_opt = F, contrast = c("niche","condition"), niche1=NULL, niche2 = NULL, condition=NULL, condition1 = NULL, condition2 = NULL, method = c("simple_random", "feature"), size = 20, feature, ...){
+prepare_magical_object = function(deg, das, RNA_counts, ATAC_counts, niche_label, meta_add, Ref_seq_file_path, genome, meta_spot_opt = F, contrast = c("niche","condition"), niche1=NULL, niche2 = NULL, condition=NULL, condition1 = NULL, condition2 = NULL, method = c("simple_random", "feature"), size = 20, feature, ...){
   ## extract spots to use
   if(contrast == "niche" & !is.null(niche2)){
-    totake = which(niche_label$Cluster %in% c(niche1, niche2))
+    totake = which(niche_label %in% c(niche1, niche2))
     RNA_counts = RNA_counts[,totake]
     ATAC_counts = ATAC_counts[,totake]
-    niche_label = niche_label[totake,]
+    niche_label = niche_label[totake]
     meta_add = meta_add[totake,]
   }
   else if(contrast == "condition"){
     if(is.null(condition2)){
       # take all the spots in `niche1`
-      totake = which(niche_label$Cluster == niche1)
+      totake = which(niche_label == niche1)
       RNA_counts = RNA_counts[,totake]
       ATAC_counts = ATAC_counts[,totake]
-      niche_label = niche_label[totake,]
+      niche_label = niche_label[totake]
       meta_add = meta_add[totake,]
     }else{
-      totake = which((niche_label$Cluster %in% c(niche1, niche2)) & meta_add[[condition]] %in% c(condition1, condition2))
+      totake = which((niche_label %in% c(niche1, niche2)) & meta_add[[condition]] %in% c(condition1, condition2))
       RNA_counts = RNA_counts[,totake]
       ATAC_counts = ATAC_counts[,totake]
-      niche_label = niche_label[totake,]
+      niche_label = niche_label[totake]
       meta_add = meta_add[totake,]
     }
   }
@@ -332,16 +333,16 @@ prepare_magical_object = function(deg, das, RNA_counts, ATAC_counts, niche_label
   ## Set metadata (RNA_cell and ATAC_cells) as indicated by meta_spot_opt
   if(meta_spot_opt == F){
     if(contrast == "niche"){
-      RNA_cells = data.frame(cell_index = 1:ncol(RNA_counts), cell_barcode = colnames(RNA_counts), cell_type = niche_label$Cluster, subject_ID = niche_label$slice, condition = "1")
-      ATAC_cells = data.frame(cell_index = 1:ncol(ATAC_counts), cell_barcode = colnames(ATAC_counts), cell_type = niche_label$Cluster, subject_ID = niche_label$slice, condition = "1")
+      RNA_cells = data.frame(cell_index = 1:ncol(RNA_counts), cell_barcode = colnames(RNA_counts), cell_type = niche_label, subject_ID = meta_add$sample, condition = "1")
+      ATAC_cells = data.frame(cell_index = 1:ncol(ATAC_counts), cell_barcode = colnames(ATAC_counts), cell_type = niche_label, subject_ID = meta_add$sample, condition = "1")
     }else if(contrast == "condition"){
-      RNA_cells = data.frame(cell_index = 1:ncol(RNA_counts), cell_barcode = colnames(RNA_counts), cell_type = niche1, subject_ID = niche_label$slice, condition = meta_add[[condition]])
-      ATAC_cells = data.frame(cell_index = 1:ncol(ATAC_counts), cell_barcode = colnames(ATAC_counts), cell_type = niche1, subject_ID = niche_label$slice, condition = meta_add[[condition]])
+      RNA_cells = data.frame(cell_index = 1:ncol(RNA_counts), cell_barcode = colnames(RNA_counts), cell_type = niche1, subject_ID = meta_add$sample, condition = meta_add[[condition]])
+      ATAC_cells = data.frame(cell_index = 1:ncol(ATAC_counts), cell_barcode = colnames(ATAC_counts), cell_type = niche1, subject_ID = meta_add$sample, condition = meta_add[[condition]])
     }
   }else{
     # labels (niche or condition)
     if(contrast == "niche"){
-      clusters = niche_label$Cluser
+      clusters = niche_label
       if(is.null(niche2)){cluster[which(cluster!=niche1)] = paste0("non_",niche1)}
     }else if(contrast == "condition"){
       clusters = meta_add[[condition]]
@@ -357,8 +358,8 @@ prepare_magical_object = function(deg, das, RNA_counts, ATAC_counts, niche_label
     }
     if(contrast == "niche"){
       #### hierarchy: samplle, niche??
-      RNA_cells = data.frame(cell_index = 1:ncol(RNA_counts), cell_barcode = colnames(RNA_counts), cell_type = niche_label$Cluster, subject_ID = new_ident, condition = "1")
-      ATAC_cells = data.frame(cell_index = 1:ncol(ATAC_counts), cell_barcode = colnames(ATAC_counts), cell_type = niche_label$Cluster, subject_ID = new_ident, condition = "1")
+      RNA_cells = data.frame(cell_index = 1:ncol(RNA_counts), cell_barcode = colnames(RNA_counts), cell_type = niche_label, subject_ID = new_ident, condition = "1")
+      ATAC_cells = data.frame(cell_index = 1:ncol(ATAC_counts), cell_barcode = colnames(ATAC_counts), cell_type = niche_label, subject_ID = new_ident, condition = "1")
     }else if(contrast == "condition"){
       RNA_cells = data.frame(cell_index = 1:ncol(RNA_counts), cell_barcode = colnames(RNA_counts), cell_type = niche1, subject_ID = new_ident, condition = meta_add[[condition]])
       ATAC_cells = data.frame(cell_index = 1:ncol(ATAC_counts), cell_barcode = colnames(ATAC_counts), cell_type = niche1, subject_ID = new_ident, condition = meta_add[[condition]])
