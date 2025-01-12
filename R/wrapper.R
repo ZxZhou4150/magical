@@ -17,6 +17,7 @@
 #' @param log2fc_thre Threshold of average log 2 fold change (avg_log2FC). Default is 0.3.
 #' @param magical To perform downstream MAGICAL analysis or not. Default is `T`.
 #' @param Ref_seq_file_path Path to the Refseq file for transcription starting site extraction
+#' @param to_file Whether to write the MAGICAl inputs to files under the folder "input files".
 #' @param genome The genome for searching TF binding motifs. Default is `"hg38"`.
 #' @param meta_spot_opt To run MAGICAL at meta-spot level or not. Default is `F`.
 #' @param method How would you like to construct meta spots. Could be simple random, or based on the similarity of some features.
@@ -29,7 +30,7 @@
 #' @param ... Other parameters
 #' 
 #' @return A list of filtered data.frames in the form of the result of `Seurat::FindMarkers()`. The MAGICAL results are not returned but written into files.
-wrapper_main = function(RNA_counts, ATAC_counts, niche_label, meta_add=NULL, pb, contrast = c("niche","condition"), niche1=NULL, niche2 = NULL, condition=NULL, condition1 = NULL, condition2 = NULL, p_thre = 0.05, log2fc_thre = 0.3, magical, Ref_seq_file_path, genome = "hg38", meta_spot_opt = F, method = c("simple_random", "feature"), size = 20, feature, TAD_file_path, dc = 5e5, iteration_num, Output_file_path = 'MAGICAL_selected_regulatory_circuits.txt', ...){
+wrapper_main = function(RNA_counts, ATAC_counts, niche_label, meta_add=NULL, pb, contrast = c("niche","condition"), niche1=NULL, niche2 = NULL, condition=NULL, condition1 = NULL, condition2 = NULL, p_thre = 0.05, log2fc_thre = 0.3, magical, to_file = F, Ref_seq_file_path, genome = "hg38", meta_spot_opt = F, method = c("simple_random", "feature"), size = 20, feature, TAD_file_path, dc = 5e5, iteration_num, Output_file_path = 'MAGICAL_selected_regulatory_circuits.txt', ...){
   ## step 1: differential analysis
   nsample = length(unique(obj$sample))
   if(nsample < 10){
@@ -49,7 +50,7 @@ wrapper_main = function(RNA_counts, ATAC_counts, niche_label, meta_add=NULL, pb,
     loaded_data = prepare_magical_object(differentials[["deg"]], differentials[["das"]], RNA_counts, ATAC_counts, niche_label, meta_add, Ref_seq_file_path, meta_spot_opt, contrast, niche1, niche2, condition, condition1, condition2, method, size, feature, ...)
   
     ## step 3: run MAGICAL
-    run_magical_main(TAD_file_path, dc, iteration_num, Output_file_path = 'MAGICAL_selected_regulatory_circuits.txt',...)
+    run_magical_main(loaded_data, TAD_file_path, dc, iteration_num, Output_file_path = 'MAGICAL_selected_regulatory_circuits.txt',...)
   }
   return(differentials)
 }
@@ -244,6 +245,7 @@ aggregate_to_pb = function(meta, mtx){
 #' @param ATAC_counts ATAC counts matrix. One row is one peak and one col is on spot.
 #' @param niche_label The niche label array of DAVINCI output. Names must match colnames of the count matrices.
 #' @param meta_add Additional meta data to add to the Seurat object. Rownames must match colnames of the count matrices.
+#' @param to_file Whether to write the MAGICAl inputs to files under the folder "input files".
 #' @param Ref_seq_file_path Path to the Refseq file for transcription starting site extraction
 #' @param genome The genome for searching TF binding motifs. Default is `"hg38"`.
 #' @param meta_spot_opt To run MAGICAL at meta-spot level or not. Default is `F`.
@@ -266,7 +268,7 @@ aggregate_to_pb = function(meta, mtx){
 #' @import chromVARmotifs
 #'
 #' @export
-prepare_magical_object = function(deg, das, RNA_counts, ATAC_counts, niche_label, meta_add, Ref_seq_file_path, genome, meta_spot_opt = F, contrast = c("niche","condition"), niche1=NULL, niche2 = NULL, condition=NULL, condition1 = NULL, condition2 = NULL, method = c("simple_random", "feature"), size = 20, feature, ...){
+prepare_magical_object = function(deg, das, RNA_counts, ATAC_counts, niche_label, meta_add, to_file, Ref_seq_file_path, genome, meta_spot_opt = F, contrast = c("niche","condition"), niche1=NULL, niche2 = NULL, condition=NULL, condition1 = NULL, condition2 = NULL, method = c("simple_random", "feature"), size = 20, feature, ...){
   ## extract spots to use
   if(contrast == "niche" & !is.null(niche2)){
     totake = which(niche_label %in% c(niche1, niche2))
@@ -306,8 +308,7 @@ prepare_magical_object = function(deg, das, RNA_counts, ATAC_counts, niche_label
   ATAC_count_mtx = as(ATAC_counts, "TsparseMatrix")
   
   ATAC_peaks_char = rownames(ATAC_counts)
-  ATAC_peaks = do.call(rbind, strsplit(ATAC_peaks_char, "-"))
-  ATAC_peaks = data.frame(chr = ATAC_peaks[,1], point1 = as.numeric(ATAC_peaks[,2], point2 = as.numeric(candidate_peaks[,3])))
+  ATAC_peaks = Signac::StringToGRanges(rownames(ATAC_peaks_char), sep = c(":", "-"))
   
   Ref_seq = read.table(Ref_seq_file_path, header = TRUE, sep = "\t")
   colnames(Ref_seq) = c("chr", "strand", "start", "end", "Gene_symbols")
@@ -367,6 +368,20 @@ prepare_magical_object = function(deg, das, RNA_counts, ATAC_counts, niche_label
   }
   
   Common_samples <- intersect(RNA_cells$subject_ID, ATAC_cells$subject_ID)
+  
+  if(to_file == T){
+    if(!dir.exists("input files"))dir.create("input_files")
+    write.table(Candidate_Genes, file = "input files/Cell type candidate genes.txt", quote = F, row.names = F, col.names = F, sep = "\t")
+    write.table(Candidate_Peaks, file = "input files/Cell type candidate peaks.txt", quote = F, row.names = F, col.names = F, sep = "\t")
+    write.table(summary(RNA_count_mtx), file = "input files/Cell type scRNA read count.txt", quote = FALSE, row.names = FALSE, col.names = FALSE, sep = "\t")
+    write.table(RNA_genes, file = "input files/scRNA genes.txt", quote = F, col.names = F, sep = "\t")
+    write.table(RNA_cells, file = "input files/Cell type scRNA cell meta.txt", quote = F, row.names = F, col.names = F, sep = "\t")
+    write.table(summary(ATAC_count_mtx), file = "/data/home/zz5708/Projects/KPMP_V2/MATLAB/input files/Cell type scATAC read count.txt", quote = FALSE, row.names = FALSE, col.names = FALSE, sep = "\t")
+    write.table(ATAC_peaks, file = "input files/scATAC peaks.txt", quote = F, col.names = F, sep = "\t")
+    write.table(ATAC_cells file = "input files/Cell type scATAC cell meta.txt", quote = F, row.names = F, col.names = F, sep = "\t")
+    write.table(motif_mapping, file = "input files/Motif mapping prior.txt", quote = F, row.names = F, col.names = F, sep = "\t")
+    write.table(Motifs, file = "input files/Motifs.txt", quote = F, row.names = F, col.names = F, sep = "\t")
+  }
   
   loaded_data = list(
     "Common_samples" = Common_samples,
