@@ -46,6 +46,23 @@ wrapper_main = function(RNA_counts, ATAC_counts, niche_label, meta_add=NULL, pb,
   }
   differentials = differential(RNA_counts, ATAC_counts, niche_label, meta_add, pb, contrast, niche1, niche2, condition, condition1, condition2, p_thre, log2fc_thre, ...)
   if(magical == T){
+    if(nsample < 10){
+      if(!exists(meta_spot_opt)){
+        meta_spot_opt = T
+        print("There are less than 10 samples. Meta-spot level MAGICAL analysis will be applied.")
+      }
+      else{
+        if(meta_spot_opt == F){
+          warning("There are less than 10 samples. We suggest using meta-spot level MAGICAL analysis.")
+        }
+      }
+    }else{
+      if(!exists(meta_spot_opt)){
+        meta_spot_opt = F
+        print("There are more than 10 samples. Pseudo-bulk level differential analysis will be applied. You can change to meta-spot level by setting `meta_spot = T`.")
+      }
+    }
+    
     ## step 2: prepare MAGICAL input
     loaded_data = prepare_magical_object(differentials[["deg"]], differentials[["das"]], RNA_counts, ATAC_counts, niche_label, meta_add, Ref_seq_file_path, meta_spot_opt, contrast, niche1, niche2, condition, condition1, condition2, method, size, feature, ...)
   
