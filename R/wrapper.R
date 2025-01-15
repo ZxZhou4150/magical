@@ -32,6 +32,7 @@
 #' @return A list of filtered data.frames in the form of the result of `Seurat::FindMarkers()`. The MAGICAL results are not returned but written into files.
 wrapper_main = function(RNA_counts, ATAC_counts, niche_label, meta_add=NULL, pb, contrast = c("niche","condition"), niche1=NULL, niche2 = NULL, condition=NULL, condition1 = NULL, condition2 = NULL, p_thre = 0.05, log2fc_thre = 0.3, magical, to_file = F, Ref_seq_file_path, genome = "hg38", meta_spot_opt = F, method = c("simple_random", "feature"), size = 20, feature, TAD_file_path, dc = 5e5, iteration_num, Output_file_path = 'MAGICAL_selected_regulatory_circuits.txt', ...){
   ## step 1: differential analysis
+  cat("Performing differential analysis ... \n")
   nsample = length(unique(obj$sample))
   if(nsample < 10){
     pb = F
@@ -64,9 +65,11 @@ wrapper_main = function(RNA_counts, ATAC_counts, niche_label, meta_add=NULL, pb,
     }
     
     ## step 2: prepare MAGICAL input
+    cat("\n Preparing inputs for MAGICAL ...\n")
     loaded_data = prepare_magical_object(differentials[["deg"]], differentials[["das"]], RNA_counts, ATAC_counts, niche_label, meta_add, Ref_seq_file_path, meta_spot_opt, contrast, niche1, niche2, condition, condition1, condition2, method, size, feature, ...)
-  
+    
     ## step 3: run MAGICAL
+    cat("\n Running MAGICAL ... \n")
     run_magical_main(loaded_data, TAD_file_path, dc, iteration_num, Output_file_path = 'MAGICAL_selected_regulatory_circuits.txt',...)
   }
   return(differentials)
@@ -96,9 +99,6 @@ wrapper_main = function(RNA_counts, ATAC_counts, niche_label, meta_add=NULL, pb,
 #'
 # #' @import Seurat
 # #' @import Signac
-# #' @import dplyr
-# #' @import tidyr
-# #' @import purrr
 #' 
 #' @export
 differential = function(RNA_counts, ATAC_counts, niche_label, meta_add=NULL, pb, contrast = c("niche","condition"), niche1=NULL, niche2 = NULL, condition=NULL, condition1 = NULL, condition2 = NULL, p_thre = 0.05, log2fc_thre = 0.3, ...){
@@ -114,54 +114,34 @@ differential = function(RNA_counts, ATAC_counts, niche_label, meta_add=NULL, pb,
   if(pb == T){
     ## build a Seurat object at pseudo-bulk level
     # aggregate counts
+    cat("Building pseudo-bulks ... \n")
+    
     spots_niche1id = which(niche_label == niche1)
     if(contrast =="niche"){
       RNA_niche1 = RNA_counts[,spots_niche1id]
       ATAC_niche1 = ATAC_counts[,spots_niche1id]
       meta_niche1 = meta_add[spots_niche1id,"sample"]
+      sample_df1 = data.frame(spot = rownames(meta_add)[spots_niche1id], sample = meta_niche1)
       if(is.null(niche2)){
         niche2 = paste0("non_",niche1)
         RNA_niche2 = RNA_counts[,-spots_niche1id]
         ATAC_niche2 = ATAC_counts[,-spots_niche1id]
         meta_niche2 = meta_add[-spots_niche1id,"sample"]
+        sample_df2 = data.frame(spot = rownames(meta_add)[-spots_niche1id], sample = meta_niche2)
       }else{
         spots_niche2id = which(niche_label == niche2)
         RNA_niche2 = RNA_counts[,spots_niche2id]
         ATAC_niche2 = ATAC_counts[,spots_niche2id]
         meta_niche2 = meta_add[spots_niche2id,"sample"]
+        sample_df2 = data.frame(spot = rownames(meta_add)[spots_niche2id], sample = meta_niche2)
       }
       
       # aggregate to pb
-      sample_df1 = data.frame(spot = names(meta_niche1), sample = meta_niche1)
       RNA_agg1 = aggregate_to_pb(sample_df1, RNA_niche1)
       ATAC_agg1 = aggregate_to_pb(sample_df1,ATAC_niche1)
       
-      sample_df2 = data.frame(spot = names(meta_niche2), sample = meta_niche2)
       RNA_agg2 = aggregate_to_pb(sample_df2, RNA_niche2)
       ATAC_agg2 = aggregate_to_pb(sample_df2,ATAC_niche2)
-      
-      RNA = cbind(RNA_agg1, RNA_agg2)
-      ATAC = cbind(ATAC_agg1, ATAC_agg2)
-      
-      # new metadata
-      metadata = data.frame(
-        spot = colnames(RNA),
-        sample = c(unique(meta_niche1),unique(meta_niche2)),
-        niche = rep(c(niche1,niche2),each = length(unique(meta_niche1)))
-      )
-      
-      # build Seurat object
-      obj <- Seurat::CreateSeuratObject(counts = RNA, meta.data = metadata)
-      Seurat::DefaultAssay(obj) = "RNA"
-      obj <- Seurat::NormalizeData(obj)
-      
-      atac_assay = Seurat::CreateAssayObject(counts = ATAC)
-      obj[["ATAC"]] = atac_assay
-      Seurat::DefaultAssay(obj) <- "ATAC"
-      obj = Signac::RunTFIDF(obj)
-      obj = Signac::FindTopFeatures(obj, min.cutoff = "q0")
-      obj = Seurat::ScaleData(obj)
-      
     }else if(contrast == "condition"){
       RNA_counts_totake = RNA_counts[,spots_niche1id]
       ATAC_counts_totake = ATAC_counts[,spots_niche1id]
@@ -173,30 +153,52 @@ differential = function(RNA_counts, ATAC_counts, niche_label, meta_add=NULL, pb,
       RNA_condition1 = RNA_counts_totake[,spots_condition1id]
       ATAC_condition1 = ATAC_counts_totake[,spots_condition1id]
       meta_condition1 = meta_add[spots_condition1id,"sample"]
+      sample_df1 = data.frame(spot = rownames(meta_add_totake)[spots_condition1id], sample = meta_condition1)
       if(is.null(condition2)){
         condition2 = paste0("non_",condition1)
         RNA_condition2 = RNA_counts_totake[,-spots_condition1id]
         ATAC_condition2 = ATAC_counts_totake[,-spots_condition1id]
-        meta_condition2 = meta_add[-spots_condition1id,"sample"]
+        meta_condition2 = meta_add_totake[-spots_condition1id,"sample"]
+        sample_df2 = data.frame(spot = rownames(meta_add_totake)[-spots_condition1id], sample = meta_condition2)
       }else{
         spots_condition2id = which(meta_add[[condition]] == condition2)
         RNA_condition2 = RNA_counts_totake[,spots_condition2id]
         ATAC_condition2 = ATAC_counts_totake[,spots_condition2id]
-        meta_condition2 = meta_add[spots_condition2id,"sample"]
+        meta_condition2 = meta_add_totake[spots_condition2id,"sample"]
+        sample_df2 = data.frame(spot = rownames(meta_add_totake)[spots_condition2id], sample = meta_condition2)
       }
       
       # aggregate to pb
-      sample_df1 = data.frame(spot = names(meta_condition1), sample = meta_condition1)
       RNA_agg1 = aggregate_to_pb(sample_df1, RNA_condition1)
       ATAC_agg1 = aggregate_to_pb(sample_df1,ATAC_condition1)
       
-      sample_df2 = data.frame(spot = names(meta_condition2), sample = meta_condition2)
       RNA_agg2 = aggregate_to_pb(sample_df2, RNA_condition2)
       ATAC_agg2 = aggregate_to_pb(sample_df2,ATAC_condition2)
-      
-      RNA = cbind(RNA_agg1, RNA_agg2)
-      ATAC = cbind(ATAC_agg1, ATAC_agg2)
     }
+    
+    colnames(RNA_agg2) = paste0(colnames(RNA_agg2),"_2")
+    colnames(ATAC_agg2) = paste0(colnames(ATAC_agg2),"_2")
+    RNA = cbind(RNA_agg1, RNA_agg2)
+    ATAC = cbind(ATAC_agg1, ATAC_agg2)
+    
+    # new metadata
+    metadata = data.frame(
+      spot = colnames(RNA),
+      sample = c(unique(meta_niche1),unique(meta_niche2)),
+      niche_label = c(colnames(RNA_agg1),colnames(RNA_agg2))
+    )
+    
+    # build Seurat object
+    obj <- Seurat::CreateSeuratObject(counts = RNA, meta.data = metadata)
+    Seurat::DefaultAssay(obj) = "RNA"
+    obj <- Seurat::NormalizeData(obj)
+    
+    atac_assay = Seurat::CreateAssayObject(counts = ATAC)
+    obj[["ATAC"]] = atac_assay
+    Seurat::DefaultAssay(obj) <- "ATAC"
+    obj = Signac::RunTFIDF(obj)
+    obj = Signac::FindTopFeatures(obj, min.cutoff = "q0")
+    obj = Seurat::ScaleData(obj)
   }else{
     # build a Seurat object at spot level
     metadata = cbind(niche_label, meta_add)
@@ -216,42 +218,47 @@ differential = function(RNA_counts, ATAC_counts, niche_label, meta_add=NULL, pb,
   }
   
   if(contrast == "niche"){
-    cells1 = obj$cell[which(obj$niche == niche1)]
+    cells1 = obj$cell[which(obj$niche_label == niche1)]
     if(is.null(niche2)){
-      cells2 = obj$cell[which(obj$niche != niche1)]
-      }else{cells2 = obj$cell[which(obj$niche == niche2)]}
+      cells2 = obj$cell[which(obj$niche_label != niche1)]
+    }else{cells2 = obj$cell[which(obj$niche_label == niche2)]}
   }else if(contrast == "condition"){
-    cells1 = obj$cell[which(obj$niche == niche1 & obj[[conditionname]] == condition1)]
+    cells1 = obj$cell[which(obj$niche_label == niche1 & obj[[conditionname]] == condition1)]
     if(is.null(condition2)){
-      cells2 = obj$cell[which(obj$niche == niche1 & obj[[conditionname]] != condition1)]
-      }else{obj$cell[which(obj$niche == niche1 & obj[[conditionname]] == condition2)]}
+      cells2 = obj$cell[which(obj$niche_label == niche1 & obj[[conditionname]] != condition1)]
+    }else{obj$cell[which(obj$niche_label == niche1 & obj[[conditionname]] == condition2)]}
   }
   
+  cat("Selecting differentially expressed genes ...\n")
   diff_genes = Seurat::FindMarkers(obj@assays$RNA, cells.1 = cells1, cells.2 = cells2, ...)
-  deg = diff_genes[which(diff_genes$p_val_adj<p_thre & abs(diff_genes$avg_log2FC)>logdc_thre),]
+  deg = diff_genes[which(diff_genes$p_val_adj<p_thre & abs(diff_genes$avg_log2FC)>log2fc_thre),]
+  paste0("We get ", dim(deg)[1], " genes.")
   
+  cat("Selecting differentially associated sites ... \n")
   diff_peaks = Seurat::FindMarkers(obj@assays$ATAC, cells.1 = cells1, cells.2 = cells2, ...)
-  das = diff_peaks[which(diff_peakss$p_val_adj<p_thre & abs(diff_peaks$avg_log2FC)>logdc_thre),]
+  das = diff_peaks[which(diff_peaks$p_val_adj<p_thre & abs(diff_peaks$avg_log2FC)>log2fc_thre),]
+  paste0("We get ", dim(das)[1], " peaks.")
   
   return(list(genes = deg, peaks = das))
 }
 
 aggregate_to_pb = function(meta, mtx){
-  agg_mtx = mtx %>%
-    as.data.frame() %>%
-    t() %>%
-    as.data.frame() %>%
-    mutate(spot = rownames(.)) %>%
-    left_join(meta, by = "spot") %>%
-    select(-spot) %>%
-    group_by(sample) %>%
-    summarise(across(everything(), sum, .names = "{.col}")) %>%
-    as.data.frame()
-  rownames(agg_mtx) = agg_mtx$sample
-  agg_mtx = t(as.matrix(agg_mtx[,-1]))
+  facts = unique(meta$sample)
+  agg_mtx = matrix(nrow = nrow(mtx), ncol = length(facts))
+  colnames(agg_mtx) = facts
+  rownames(agg_mtx) = rownames(mtx)
+  for(fact in facts){
+    totake = meta[which(meta$sample %in% fact),"spot"]
+    if(length(totake)==1){
+      agg_mtx[,fact] = mtx[,totake]
+    }else{
+      toadd = mtx[,totake]
+      agg_mtx[,fact] = rowSums(toadd)
+    }
+  }
   return(agg_mtx)
 }
- 
+
 #' Preparing MAGICAL input
 #' 
 #' Building MAGICAL object
@@ -331,6 +338,7 @@ prepare_magical_object = function(deg, das, RNA_counts, ATAC_counts, niche_label
   colnames(Ref_seq) = c("chr", "strand", "start", "end", "Gene_symbols")
   
   # get motifs with chromVARmotifs
+  cat("\n Getting motfis ... \n")
   chromatinassay <- CreateChromatinAssay(counts = ATAC_counts, genome = genome)
   object <- CreateSeuratObject(counts = chromatinassay)
   object <- AddMotifs(object = object, genome = BSgenome.Hsapiens.UCSC.hg38, pfm = human_pwms_v2)
@@ -359,6 +367,7 @@ prepare_magical_object = function(deg, das, RNA_counts, ATAC_counts, niche_label
     }
   }else{
     # labels (niche or condition)
+    cat("Building meta-spots ... \n")
     if(contrast == "niche"){
       clusters = niche_label
       if(is.null(niche2)){cluster[which(cluster!=niche1)] = paste0("non_",niche1)}
@@ -387,6 +396,7 @@ prepare_magical_object = function(deg, das, RNA_counts, ATAC_counts, niche_label
   Common_samples <- intersect(RNA_cells$subject_ID, ATAC_cells$subject_ID)
   
   if(to_file == T){
+    cat("Writing files ...\n")
     if(!dir.exists("input files"))dir.create("input_files")
     write.table(Candidate_Genes, file = "input files/Cell type candidate genes.txt", quote = F, row.names = F, col.names = F, sep = "\t")
     write.table(Candidate_Peaks, file = "input files/Cell type candidate peaks.txt", quote = F, row.names = F, col.names = F, sep = "\t")
@@ -395,7 +405,7 @@ prepare_magical_object = function(deg, das, RNA_counts, ATAC_counts, niche_label
     write.table(RNA_cells, file = "input files/Cell type scRNA cell meta.txt", quote = F, row.names = F, col.names = F, sep = "\t")
     write.table(summary(ATAC_count_mtx), file = "/data/home/zz5708/Projects/KPMP_V2/MATLAB/input files/Cell type scATAC read count.txt", quote = FALSE, row.names = FALSE, col.names = FALSE, sep = "\t")
     write.table(ATAC_peaks, file = "input files/scATAC peaks.txt", quote = F, col.names = F, sep = "\t")
-    write.table(ATAC_cells file = "input files/Cell type scATAC cell meta.txt", quote = F, row.names = F, col.names = F, sep = "\t")
+    write.table(ATAC_cells, file = "input files/Cell type scATAC cell meta.txt", quote = F, row.names = F, col.names = F, sep = "\t")
     write.table(motif_mapping, file = "input files/Motif mapping prior.txt", quote = F, row.names = F, col.names = F, sep = "\t")
     write.table(Motifs, file = "input files/Motifs.txt", quote = F, row.names = F, col.names = F, sep = "\t")
   }
