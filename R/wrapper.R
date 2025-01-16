@@ -20,9 +20,13 @@
 #' @param to_file Whether to write the MAGICAl inputs to files under the folder "input files".
 #' @param genome The genome for searching TF binding motifs. Default is `"hg38"`.
 #' @param meta_spot_opt To run MAGICAL at meta-spot level or not. Default is `F`.
-#' @param method How would you like to construct meta spots. Could be simple random, or based on the similarity of some features.
+#' @param method How would you like to construct meta spots. Could be simple random, or based on the similarity of some features, or using the DAVINCI function `swk()`.
 #' @param size The number of spots to be in one meta-spot
 #' @param feature The features to be clustered. Can be LVs from DAVINCI, or spatial coordinates.
+#' @param cl_method A choice from "mclust" and "louvain". The clustering method.
+#' @param mclust.num If `method = "mclust`, this is the number of clusters.
+#' @param ld.resolution If `method = "louvain"`, this is the resolution parameter.
+#' @param random.seed Random seed.
 #' @param TAD_file_path The path to the TAD file.
 #' @param dc Distance control parameter when TAD file is not specified, Default is 5e5 bps.
 #' @param iteration_num The number of iterations for the main estimation step
@@ -30,7 +34,7 @@
 #' @param ... Other parameters
 #' 
 #' @return A list of filtered data.frames in the form of the result of `Seurat::FindMarkers()`. The MAGICAL results are not returned but written into files.
-wrapper_main = function(RNA_counts, ATAC_counts, niche_label, meta_add=NULL, pb, contrast = c("niche","condition"), niche1=NULL, niche2 = NULL, condition=NULL, condition1 = NULL, condition2 = NULL, p_thre = 0.05, log2fc_thre = 0.3, magical, to_file = F, Ref_seq_file_path, genome = "hg38", meta_spot_opt = F, method = c("simple_random", "feature"), size = 20, feature, TAD_file_path, dc = 5e5, iteration_num, Output_file_path = 'MAGICAL_selected_regulatory_circuits.txt', ...){
+wrapper_main = function(RNA_counts, ATAC_counts, niche_label, meta_add=NULL, pb, contrast = c("niche","condition"), niche1=NULL, niche2 = NULL, condition=NULL, condition1 = NULL, condition2 = NULL, p_thre = 0.05, log2fc_thre = 0.3, magical, to_file = F, Ref_seq_file_path, genome = "hg38", meta_spot_opt = F, method = c("simple_random", "feature", "swk"), size = 20, feature,cl_method, mclust.num, ld.resolution, random.seed, TAD_file_path, dc = 5e5, iteration_num, Output_file_path = 'MAGICAL_selected_regulatory_circuits.txt', ...){
   ## step 1: differential analysis
   cat("Performing differential analysis ... \n")
   nsample = length(unique(obj$sample))
@@ -66,7 +70,7 @@ wrapper_main = function(RNA_counts, ATAC_counts, niche_label, meta_add=NULL, pb,
     
     ## step 2: prepare MAGICAL input
     cat("\n Preparing inputs for MAGICAL ...\n")
-    loaded_data = prepare_magical_object(differentials[["deg"]], differentials[["das"]], RNA_counts, ATAC_counts, niche_label, meta_add, Ref_seq_file_path, meta_spot_opt, contrast, niche1, niche2, condition, condition1, condition2, method, size, feature, ...)
+    loaded_data = prepare_magical_object(differentials[["deg"]], differentials[["das"]], RNA_counts, ATAC_counts, niche_label, meta_add, Ref_seq_file_path, meta_spot_opt, contrast, niche1, niche2, condition, condition1, condition2, method, size, feature, cl_method, mclust.num, ld.resolution, random.seed, ...)
     
     ## step 3: run MAGICAL
     cat("\n Running MAGICAL ... \n")
@@ -279,10 +283,14 @@ aggregate_to_pb = function(meta, mtx){
 #' @param conditionname The condition you want to make the contrast if `contrast = "condition"`
 #' @param condition1 One condition you want to contrast if `contrast = "condition"`
 #' @param condition2 The other condition you want to contrast if `contrast = "condition"`. Not specified is to contrast `condition1` with all other conditions.
-#' @param method How would you like to construct meta spots. Could be simple random, or based on the similarity of some features.
+#' @param method How would you like to construct meta spots. Could be simple random, or based on the similarity of some features, or the DAVINCI function `swk()`.
 #' @param size The number of spots to be in one meta-spot
 #' @param feature The features to be clustered. Can be LVs from DAVINCI, or spatial coordinates.
-#' @param ... Other parameters for `same_size_clustering()`
+#' @param cl_method A choice from "mclust" and "louvain". The clustering method for `swk()`.
+#' @param mclust.num If `method = "mclust`, this is the number of clusters.
+#' @param ld.resolution If `method = "louvain"`, this is the resolution parameter.
+#' @param random.seed Random seed.
+#' @param ... Other parameters for `same_size_clustering()` or `swk()`
 #' 
 #' @import Matrix
 #' @import Seurat
@@ -292,7 +300,7 @@ aggregate_to_pb = function(meta, mtx){
 #' @import chromVARmotifs
 #'
 #' @export
-prepare_magical_object = function(deg, das, RNA_counts, ATAC_counts, niche_label, meta_add, to_file, Ref_seq_file_path, genome, meta_spot_opt = F, contrast = c("niche","condition"), niche1=NULL, niche2 = NULL, condition=NULL, condition1 = NULL, condition2 = NULL, method = c("simple_random", "feature"), size = 20, feature, ...){
+prepare_magical_object = function(deg, das, RNA_counts, ATAC_counts, niche_label, meta_add, to_file, Ref_seq_file_path, genome, meta_spot_opt = F, contrast = c("niche","condition"), niche1=NULL, niche2 = NULL, condition=NULL, condition1 = NULL, condition2 = NULL, method = c("simple_random", "feature", "swk"), size = 20, feature, cl_method, mclust.num, ld.resolution, random.seed, ...){
   ## extract spots to use
   if(contrast == "niche" & !is.null(niche2)){
     totake = which(niche_label %in% c(niche1, niche2))
@@ -379,17 +387,19 @@ prepare_magical_object = function(deg, das, RNA_counts, ATAC_counts, niche_label
     method = match.arg(method, c("simple_random", "feature"))
     
     if(method == "simple_random"){
-      new_idents = metaspot_sr(clusters, size)
-    }else{
-      new_idents = metaspot_feature(clusters, size, feature)
+      new_idents = metaspot_sr(clusters, size)$group_index
+    }else if(method == "feature"){
+      new_idents = metaspot_feature(clusters, size, feature)$group_index
+    }else if(method == "swk"){
+      new_idents = metaspot_swk(clusters, feature, cl_method, mclust.num, ld.resolution, random.seed, ...)
     }
     if(contrast == "niche"){
       #### hierarchy: samplle, niche??
-      RNA_cells = data.frame(cell_index = 1:ncol(RNA_counts), cell_barcode = colnames(RNA_counts), cell_type = niche_label, subject_ID = new_ident, condition = "1")
-      ATAC_cells = data.frame(cell_index = 1:ncol(ATAC_counts), cell_barcode = colnames(ATAC_counts), cell_type = niche_label, subject_ID = new_ident, condition = "1")
+      RNA_cells = data.frame(cell_index = 1:ncol(RNA_counts), cell_barcode = colnames(RNA_counts), cell_type = niche_label, subject_ID = new_idents, condition = "1")
+      ATAC_cells = data.frame(cell_index = 1:ncol(ATAC_counts), cell_barcode = colnames(ATAC_counts), cell_type = niche_label, subject_ID = new_idents, condition = "1")
     }else if(contrast == "condition"){
-      RNA_cells = data.frame(cell_index = 1:ncol(RNA_counts), cell_barcode = colnames(RNA_counts), cell_type = niche1, subject_ID = new_ident, condition = meta_add[[condition]])
-      ATAC_cells = data.frame(cell_index = 1:ncol(ATAC_counts), cell_barcode = colnames(ATAC_counts), cell_type = niche1, subject_ID = new_ident, condition = meta_add[[condition]])
+      RNA_cells = data.frame(cell_index = 1:ncol(RNA_counts), cell_barcode = colnames(RNA_counts), cell_type = niche1, subject_ID = new_idents, condition = meta_add[[condition]])
+      ATAC_cells = data.frame(cell_index = 1:ncol(ATAC_counts), cell_barcode = colnames(ATAC_counts), cell_type = niche1, subject_ID = new_idents, condition = meta_add[[condition]])
     }
   }
   
@@ -506,11 +516,11 @@ metaspot_feature <- function(clusters, size, feature) {
     subset_clusters <- cbind.data.frame(1:length(totake), clusters[totake])
     
     if(length(totake)<=size){
-      subset_clusters$group_index <- "1"
+      subset_clusters$group_index <- paste0(label,"-1")
     }
     else{
       subset_features <- feature[subset_clusters[,1], ]
-      result <- same_size_clustering(subset_features, clsize = 10)
+      result <- same_size_clustering(subset_features, clsize = size)
       subset_clusters$group_index <- paste0(label, "-", result)
     }
     results <- rbind(results, subset_clusters)
@@ -710,3 +720,38 @@ run_magical_main = function(loaded_data, TAD_file_path, dc = 5e5, iteration_num,
   save(Candidate_circuits, Circuits_linkage_posterior, file = "MAGICAL_results.RData")
 }
 
+#' Functions for metaspot construction
+#' 
+#' Using `DAVINCI::swk()`
+#' 
+#' @param clusters The labels of the spots
+#' @param feature The features to be clustered. Can be LVs from DAVINCI, or spatial coordinates.
+#' @param cl_method A choice from "mclust" and "louvain". The clustering method.
+#' @param mclust.num If `method = "mclust`, this is the number of clusters.
+#' @param ld.resolution If `method = "louvain"`, this is the resolution parameter.
+#' @param random.seed Random seed.
+#' @param ... Other parameters required by `DAVINCI::swk()`.
+#' 
+#' @export
+metaspot_swk = function(clusters, feature, cl_method = c("mclust", "louvain"), mclust.num = NULL, ld.resolution = NULL, random.seed = 1, ...) {
+  results <- data.frame(index = integer(), label = character(), group_index = integer())
+  labels <- unique(clusters)
+  
+  for (label in labels) {
+    totake <- which(clusters == label)
+    if(length(totake)==0){
+      next()
+    }
+    
+    subset_clusters <- cbind.data.frame(1:length(totake), clusters[totake])
+    
+    subset_features <- feature[subset_clusters[,1], ]
+    sink("/dev/null") # to suppress messages from `print()`
+    result <-  suppressMessages(swk(subset_features, cl_method, mclust.num = mclust.num, ld.resolution = ld.resolution, random.seed, ...))
+    subset_clusters$group_index <- paste0(label, "-", result)
+    sink()
+    
+    results <- rbind(results, subset_clusters)
+  }
+  return(results)
+}
