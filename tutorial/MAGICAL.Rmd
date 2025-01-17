@@ -164,7 +164,7 @@ Finally, optimized circuits fitting the variation in both modalities are selecte
 Note: running MAGICAL on our demo files may return very similar but slightly different results to the example output file we provided due the nature of Bayesian algorithm.
 
 ```{r}
-MAGICAL_circuits_output(
+res = MAGICAL_circuits_output(
   Output_file_path = "MAGICAL_selected_regulatory_circuits.txt",
   Candidate_circuits, Circuits_linkage_posterior
 )
