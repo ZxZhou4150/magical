@@ -20,8 +20,6 @@
 #' @param to_file Whether to write the MAGICAl inputs to files under the folder "input files".
 #' @param genome The genome for searching TF binding motifs. Default is `"hg38"`.
 #' @param meta_spot_opt To run MAGICAL at meta-spot level or not. Default is `F`.
-#' @param method How would you like to construct meta spots. Could be simple random, or based on the similarity of some features, or using the DAVINCI function `swk()`.
-#' @param size The number of spots to be in one meta-spot
 #' @param feature The features to be clustered. Can be LVs from DAVINCI, or spatial coordinates.
 #' @param cl_method A choice from "mclust" and "louvain". The clustering method.
 #' @param mclust.num If `method = "mclust`, this is the number of clusters.
@@ -33,8 +31,8 @@
 #' @param Output_file_path The path to write the circuit results
 #' @param ... Other parameters
 #' 
-#' @return A list of filtered data.frames in the form of the result of `Seurat::FindMarkers()`. The MAGICAL results are not returned but written into files.
-wrapper_main = function(RNA_counts, ATAC_counts, niche_label, meta_add=NULL, pb, contrast = c("niche","condition"), niche1=NULL, niche2 = NULL, condition=NULL, condition1 = NULL, condition2 = NULL, p_thre = 0.05, log2fc_thre = 0.3, magical, to_file = F, Ref_seq_file_path, genome = "hg38", meta_spot_opt = F, method = c("simple_random", "feature", "swk"), size = 20, feature,cl_method, mclust.num, ld.resolution, random.seed, TAD_file_path, dc = 5e5, iteration_num, Output_file_path = 'MAGICAL_selected_regulatory_circuits.txt', ...){
+#' @return If `magical = F`: a list of filtered data.frame in the form of the result of `Seurat::FindMarkers()`. If `magical = T`: a list of 2 data.frames: 1 is the one above, the other is the output from `MAGICAL_circuits_output()`.
+wrapper_main = function(RNA_counts, ATAC_counts, niche_label, meta_add=NULL, pb, contrast = c("niche","condition"), niche1=NULL, niche2 = NULL, condition=NULL, condition1 = NULL, condition2 = NULL, p_thre = 0.05, log2fc_thre = 0.3, magical, to_file = F, Ref_seq_file_path, genome = "hg38", meta_spot_opt = F, feature,cl_method, mclust.num, ld.resolution, random.seed, TAD_file_path, dc = 5e5, iteration_num = 250, Output_file_path = 'MAGICAL_selected_regulatory_circuits.txt', ...){
   ## step 1: differential analysis
   cat("Performing differential analysis ... \n")
   nsample = length(unique(obj$sample))
@@ -68,15 +66,32 @@ wrapper_main = function(RNA_counts, ATAC_counts, niche_label, meta_add=NULL, pb,
       }
     }
     
-    ## step 2: prepare MAGICAL input
-    cat("\n Preparing inputs for MAGICAL ...\n")
-    loaded_data = prepare_magical_object(differentials[["deg"]], differentials[["das"]], RNA_counts, ATAC_counts, niche_label, meta_add, Ref_seq_file_path, meta_spot_opt, contrast, niche1, niche2, condition, condition1, condition2, method, size, feature, cl_method, mclust.num, ld.resolution, random.seed, ...)
+    ## In this version, only `swk` clustering is retained. It will use 6 different sets of clustering settings and run 6 MAGICAL separately. Accordingly, `iteration_num` is downgraded.
     
-    ## step 3: run MAGICAL
-    cat("\n Running MAGICAL ... \n")
-    run_magical_main(loaded_data, TAD_file_path, dc, iteration_num, Output_file_path = 'MAGICAL_selected_regulatory_circuits.txt',...)
+    cl_settings = data.frame(cl_method = rep(c("mclust","louvain"),each = 3), param = c(5,10,20,0.5,2,4))
+    circuits = list()
+    
+    for(i in 1:3){
+      ## step 2: prepare MAGICAL input
+      cat("\n Preparing inputs for MAGICAL ...\n")
+      loaded_data = prepare_magical_object(differentials[["deg"]], differentials[["das"]], RNA_counts, ATAC_counts, niche_label, meta_add, Ref_seq_file_path, meta_spot_opt, contrast, niche1, niche2, condition, condition1, condition2, feature, cl_method = "mclust", mclust.num = cl_settings[i,2], random.seed, ...)
+      
+      ## step 3: run MAGICAL
+      cat("\n Running MAGICAL ... \n")
+      run_magical_main(loaded_data, TAD_file_path, dc, iteration_num, Output_file_path = 'MAGICAL_selected_regulatory_circuits.txt',...)
+    }
+    for(i in 4:6){
+      cat("\n Preparing inputs for MAGICAL ...\n")
+      loaded_data = prepare_magical_object(differentials[["deg"]], differentials[["das"]], RNA_counts, ATAC_counts, niche_label, meta_add, Ref_seq_file_path, meta_spot_opt, contrast, niche1, niche2, condition, condition1, condition2, feature, cl_method = "louvain", ld.resolution = cl_settings[i,2], random.seed, ...)
+      
+      cat("\n Running MAGICAL ... \n")
+      circuits[[i]] = run_magical_main(loaded_data, TAD_file_path, dc, iteration_num, Output_file_path = 'MAGICAL_selected_regulatory_circuits.txt',...)
+    }
+    
+    ## find consensus circuits
+    consensus_circuits = Reduce(function(x, y) inner_join(x, y, by = c("Gene_symbol", "Gene_chr", "Gene_TSS", "Peak_chr", "Peak_start", "Peak_end")), circuits)
   }
-  return(differentials)
+  return(list(differentials,consensus_circuits))
 }
 
 
@@ -283,8 +298,6 @@ aggregate_to_pb = function(meta, mtx){
 #' @param conditionname The condition you want to make the contrast if `contrast = "condition"`
 #' @param condition1 One condition you want to contrast if `contrast = "condition"`
 #' @param condition2 The other condition you want to contrast if `contrast = "condition"`. Not specified is to contrast `condition1` with all other conditions.
-#' @param method How would you like to construct meta spots. Could be simple random, or based on the similarity of some features, or the DAVINCI function `swk()`.
-#' @param size The number of spots to be in one meta-spot
 #' @param feature The features to be clustered. Can be LVs from DAVINCI, or spatial coordinates.
 #' @param cl_method A choice from "mclust" and "louvain". The clustering method for `swk()`.
 #' @param mclust.num If `method = "mclust`, this is the number of clusters.
@@ -300,7 +313,7 @@ aggregate_to_pb = function(meta, mtx){
 #' @import chromVARmotifs
 #'
 #' @export
-prepare_magical_object = function(deg, das, RNA_counts, ATAC_counts, niche_label, meta_add, to_file, Ref_seq_file_path, genome, meta_spot_opt = F, contrast = c("niche","condition"), niche1=NULL, niche2 = NULL, condition=NULL, condition1 = NULL, condition2 = NULL, method = c("simple_random", "feature", "swk"), size = 20, feature, cl_method, mclust.num, ld.resolution, random.seed, ...){
+prepare_magical_object = function(deg, das, RNA_counts, ATAC_counts, niche_label, meta_add, to_file, Ref_seq_file_path, genome, meta_spot_opt = F, contrast = c("niche","condition"), niche1=NULL, niche2 = NULL, condition=NULL, condition1 = NULL, condition2 = NULL, feature, cl_method, mclust.num, ld.resolution, random.seed, ...){
   ## extract spots to use
   if(contrast == "niche" & !is.null(niche2)){
     totake = which(niche_label %in% c(niche1, niche2))
@@ -384,15 +397,7 @@ prepare_magical_object = function(deg, das, RNA_counts, ATAC_counts, niche_label
       if(is.null(condition2)){cluster[which(cluster!=condition1)] = paste0("non_",condition1)}
     }
     
-    method = match.arg(method, c("simple_random", "feature"))
-    
-    if(method == "simple_random"){
-      new_idents = metaspot_sr(clusters, size)$group_index
-    }else if(method == "feature"){
-      new_idents = metaspot_feature(clusters, size, feature)$group_index
-    }else if(method == "swk"){
-      new_idents = metaspot_swk(clusters, feature, cl_method, mclust.num, ld.resolution, random.seed, ...)
-    }
+    new_idents = metaspot_swk(clusters, feature, cl_method, mclust.num, ld.resolution, random.seed, ...)
     if(contrast == "niche"){
       #### hierarchy: samplle, niche??
       RNA_cells = data.frame(cell_index = 1:ncol(RNA_counts), cell_barcode = colnames(RNA_counts), cell_type = niche_label, subject_ID = new_idents, condition = "1")
@@ -438,262 +443,6 @@ prepare_magical_object = function(deg, das, RNA_counts, ATAC_counts, niche_label
   return(loaded_data)
 }
 
-#' Functions for metaspot construction
-#'
-#' Simple random
-#' 
-#' @seealso [metaspot_feature()]
-#'
-#' @param clusters The labels of the spots
-#' @param size The size you want each metaspot group to have
-#' 
-#' @return A `data.frame` with 3 columns: index, label (niche or condition), group_index (assigned metaspot group)
-#' 
-#' @export
-metaspot_sr <- function(clusters, size) {
-  results <- data.frame(index = integer(), label = character(), group_index = integer())
-  labels <- unique(clusters)
-  
-  for (label in labels) {
-    group_number <- 1
-    totake <- which(clusters == label)
-    if(length(totake)==0){
-      next()
-    }
-    
-    subset_clusters <- cbind.data.frame(1:length(totake), clusters[totake])
-    
-    # randomize the clusters
-    subset_clusters <- subset_clusters[sample(nrow(subset_clusters)), , drop = FALSE]
-    
-    num_items <- nrow(subset_clusters)
-    num_full_groups <- num_items %/% size
-    remainder <- num_items %% size
-    
-    for (i in seq_len(num_full_groups)) {
-      indices <- (i - 1) * size + 1:size
-      subset_clusters[indices, "group_index"] <- rep(paste0(label,"-",group_number), length(indices))
-      group_number <- group_number + 1
-    }
-    
-    if (remainder > 0) {
-      indices <- (num_full_groups * size + 1):num_items
-      if (remainder <= size / 3 & group_number != 1) {
-        subset_clusters[indices, "group_index"] <- rep(paste0(label,"-",group_number - 1), length(indices))
-      } else {
-        subset_clusters[indices, "group_index"] <- rep(paste0(label,"-",group_number), length(indices))
-      }
-    }
-    
-    results <- rbind(results, subset_clusters)
-  }
-  return(results)
-}
-
-#' Functions for metaspot construction
-#'
-#' Based on the similarity of features (e.g., LVs, coordinates)
-#' 
-#' @seealso [metaspot_sr()]
-#' 
-#' @param clusters The labels of the spots
-#' @param size The size you want each metaspot group to have
-#' @param feature The features to be clustered. Can be LVs from DAVINCI, or spatial coordinates.
-#' 
-#' @return A `data.frame` with 3 columns: index, label (niche or condition), group_index (assigned metaspot group)
-#' 
-#' @export
-metaspot_feature <- function(clusters, size, feature) {
-  results <- data.frame(index = integer(), label = character(), group_index = integer())
-  labels <- unique(clusters)
-  
-  for (label in labels) {
-    totake <- which(clusters == label)
-    if(length(totake)==0){
-      next()
-    }
-    
-    subset_clusters <- cbind.data.frame(1:length(totake), clusters[totake])
-    
-    if(length(totake)<=size){
-      subset_clusters$group_index <- paste0(label,"-1")
-    }
-    else{
-      subset_features <- feature[subset_clusters[,1], ]
-      result <- same_size_clustering(subset_features, clsize = size)
-      subset_clusters$group_index <- paste0(label, "-", result)
-    }
-    results <- rbind(results, subset_clusters)
-  }
-  return(results)
-}
-
-## functions from `same_size_clustering.R`
-# https://github.com/jmonlong/Hippocamplus/blob/master/content/post/2018-06-09-ClusterEqualSize.Rmd
-
-#' Same Size Clustering
-#'
-#' This is a wrapper for several implementation that classify samples into
-#' same size clusters, the details please see [this blog](http://jmonlong.github.io/Hippocamplus/2018/06/09/cluster-same-size/).
-#' The source code is modified based on code from the blog.
-#'
-#' @param mat a data/distance matrix.
-#' @param diss if `TRUE`, treat `mat` as a distance matrix.
-#' @param clsize integer, number of sample within a cluster.
-#' @param algo algorithm.
-#' @param method method.
-#'
-#' @return a vector.
-#' @export
-#'
-#' @examples
-#' set.seed(1234L)
-#' x <- rbind(
-#'   matrix(rnorm(100, sd = 0.3), ncol = 2),
-#'   matrix(rnorm(100, mean = 1, sd = 0.3), ncol = 2)
-#' )
-#' colnames(x) <- c("x", "y")
-#'
-#' y1 <- same_size_clustering(x, clsize = 10)
-#' y11 <- same_size_clustering(as.matrix(dist(x)), clsize = 10, diss = TRUE)
-#'
-#' y2 <- same_size_clustering(x, clsize = 10, algo = "hcbottom", method = "ward.D")
-#'
-#' y3 <- same_size_clustering(x, clsize = 10, algo = "kmvar")
-#' y33 <- same_size_clustering(as.matrix(dist(x)), clsize = 10, algo = "kmvar", diss = TRUE)
-#' @testexamples
-#' expect_length(y1, 100L)
-#' expect_length(y11, 100L)
-#' expect_length(y2, 100L)
-#' expect_length(y3, 100L)
-#' expect_length(y33, 100L)
-same_size_clustering <- function(mat, diss = FALSE, clsize = NULL,
-                                 algo = c("nnit", "hcbottom", "kmvar"),
-                                 method = c(
-                                   "maxd", "random", "mind", "elki",
-                                   "ward.D", "average", "complete", "single"
-                                 )) {
-  stopifnot(is.numeric(clsize))
-  
-  algo <- match.arg(algo)
-  method <- match.arg(method)
-  do.call(algo, args = list(mat = mat, diss = diss, clsize = clsize, method = method))
-}
-
-nnit <- function(mat,
-                 clsize = NULL,
-                 diss = FALSE,
-                 method = "maxd") {
-  stopifnot(is.logical(diss))
-  
-  clsize.rle <- rle(as.numeric(cut(1:nrow(mat), ceiling(nrow(mat) / clsize))))
-  clsize <- clsize.rle$lengths
-  lab <- rep(NA, nrow(mat))
-  if (isFALSE(diss)) {
-    dmat <- as.matrix(dist(mat))
-  } else {
-    dmat <- mat
-  }
-  cpt <- 1
-  while (sum(is.na(lab)) > 0) {
-    lab.ii <- which(is.na(lab))
-    dmat.m <- dmat[lab.ii, lab.ii]
-    ii <- switch(method,
-                 maxd = which.max(rowSums(dmat.m)),
-                 mind = which.min(rowSums(dmat.m)),
-                 random = sample.int(nrow(dmat.m), 1),
-                 stop("unsupported method in 'nnit'!")
-    )
-    lab.m <- rep(NA, length(lab.ii))
-    lab.m[head(order(dmat.m[ii, ]), clsize[cpt])] <- cpt
-    lab[lab.ii] <- lab.m
-    cpt <- cpt + 1
-  }
-  if (any(is.na(lab))) {
-    lab[which(is.na(lab))] <- cpt
-  }
-  lab
-}
-
-kmvar <- function(mat,
-                  clsize = NULL,
-                  diss = FALSE,
-                  method = "maxd") {
-  stopifnot(is.logical(diss))
-  
-  k <- ceiling(nrow(mat) / clsize)
-  if (isFALSE(diss)) {
-    km.o <- kmeans(mat, k)
-    # distance to centers
-    centd <- lapply(1:k, function(kk) {
-      euc <- t(mat) - km.o$centers[kk, ]
-      sqrt(apply(euc, 2, function(x) sum(x^2)))
-    })
-    centd <- matrix(unlist(centd), ncol = k)
-  } else {
-    message("PAM algorithm is applied when input distance matrix.")
-    pam.o <- cluster::pam(mat, k, diss = TRUE)
-    # medoids
-    # distance to medoids
-    centd <- mat[, pam.o$id.med, drop = FALSE]
-  }
-  
-  labs <- rep(NA, nrow(mat))
-  clsizes <- rep(0, k)
-  
-  ptord <- switch(method,
-                  maxd = order(-apply(centd, 1, max)),
-                  mind = order(apply(centd, 1, min)),
-                  random = sample.int(nrow(mat)),
-                  elki = order(apply(centd, 1, min) - apply(centd, 1, max)),
-                  stop("unsupported method in 'kmvar'!")
-  )
-  
-  for (ii in ptord) {
-    bestcl <- which.max(centd[ii, ])
-    labs[ii] <- bestcl
-    clsizes[bestcl] <- clsizes[bestcl] + 1
-    if (clsizes[bestcl] >= clsize) {
-      centd[, bestcl] <- NA
-    }
-  }
-  return(labs)
-}
-
-hcbottom <- function(mat,
-                     clsize = NULL,
-                     diss = FALSE,
-                     method = "ward.D") {
-  stopifnot(is.logical(diss))
-  
-  method <- match.arg(method, choices = c("ward.D", "average", "complete", "single"))
-  if (isFALSE(diss)) {
-    dmat <- as.matrix(dist(mat))
-  } else {
-    dmat <- mat
-  }
-  clsize.rle <- rle(as.numeric(cut(1:nrow(mat), ceiling(nrow(mat) / clsize))))
-  clsizes <- clsize.rle$lengths
-  cpt <- 1
-  lab <- rep(NA, nrow(mat))
-  for (clss in clsizes[-1]) {
-    lab.ii <- which(is.na(lab))
-    hc.o <- hclust(as.dist(dmat[lab.ii, lab.ii]), method = method)
-    clt <- 0
-    ct <- length(lab.ii) - clss
-    while (max(clt) < clss) {
-      cls <- cutree(hc.o, ct)
-      clt <- table(cls)
-      ct <- ct - 1
-    }
-    cl.sel <- which(cls == as.numeric(names(clt)[which.max(clt)]))
-    lab[lab.ii[head(cl.sel, clss)]] <- cpt
-    cpt <- cpt + 1
-  }
-  lab[is.na(lab)] <- cpt
-  lab
-}
-
 #' Run MAGICAL
 #' 
 #' Run MAGICAL
@@ -705,7 +454,7 @@ hcbottom <- function(mat,
 #' @param Output_file_path The path to write the circuit results
 #' @param ... Other parameters for MAGICAL
 #' 
-#' @return No return value, but will save the inferred circuits and the workspace to files. See the tutorial of MAGICAL.
+#' @return The return value of `MAGICAL_circuits_output()`.
 #' 
 #' @export
 run_magical_main = function(loaded_data, TAD_file_path, dc = 5e5, iteration_num, Output_file_path = 'MAGICAL_selected_regulatory_circuits.txt',...){
@@ -716,8 +465,9 @@ run_magical_main = function(loaded_data, TAD_file_path, dc = 5e5, iteration_num,
   }
   Initial_model<-MAGICAL_initialization(loaded_data, Candidate_circuits)
   Circuits_linkage_posterior<-MAGICAL_estimation(loaded_data, Candidate_circuits, Initial_model, iteration_num = 1000)
-  MAGICAL_circuits_output(Output_file_path, Candidate_circuits, Circuits_linkage_posterior, ...)
-  save(Candidate_circuits, Circuits_linkage_posterior, file = "MAGICAL_results.RData")
+  res = MAGICAL_circuits_output(Output_file_path, Candidate_circuits, Circuits_linkage_posterior, ...)
+  # save(Candidate_circuits, Circuits_linkage_posterior, file = "MAGICAL_results.RData")
+  return(res)
 }
 
 #' Functions for metaspot construction
