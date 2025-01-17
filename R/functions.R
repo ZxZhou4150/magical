@@ -1123,7 +1123,7 @@ MAGICAL_estimation <- function(loaded_data, Candidate_circuits, Initial_model, i
 #' @param prob_threshold_TF_peak_binding The threshold of TF-peak binding probability. Default is 0.7
 #' @param prob_threshold_peak_gene_looping The threshold of peak-gene looping probability. Default is 0.85
 #'
-#' @return There is no return value for this function, but it will write a file with this format: Gene_symbol - Gene_chr - Gene_TSS - Peak_chr - Peak_start - Peak_end - Looping_prob - TFs(binding prob)
+#' @return A data.frame with following columns: Gene_symbol, Gene_chr, Gene_TSS, Peak_chr, Peak_start, Peak_end,  Looping_prob, TFs(binding prob)
 #'
 #' @import Matrix
 #' @importFrom Matrix colSums rowSums sparseMatrix as.matrix
@@ -1131,37 +1131,67 @@ MAGICAL_estimation <- function(loaded_data, Candidate_circuits, Initial_model, i
 #' @export
 MAGICAL_circuits_output <- function(Output_file_path, Candidate_circuits, Circuits_linkage_posterior,
                                     prob_threshold_TF_peak_binding = 0.7, prob_threshold_peak_gene_looping = 0.85) {
+  # Initialize results data.frame
+  results <- data.frame(
+    Gene_symbol = character(),
+    Gene_chr = character(),
+    Gene_TSS = numeric(),
+    Peak_chr = character(),
+    Peak_start = numeric(),
+    Peak_end = numeric(),
+    Looping_prob = numeric(),
+    TFs_binding_prob = character(),
+    stringsAsFactors = FALSE
+  )
+  
   Peak_Gene_index <- which(Circuits_linkage_posterior$Peak_Gene_Looping_prob > prob_threshold_peak_gene_looping, arr.ind = TRUE)
   circuit_flag <- matrix(0, nrow = nrow(Peak_Gene_index), ncol = 1)
-  writeLines("Gene_symbol\tGene_chr\tGene_TSS\tPeak_chr\tPeak_start\tPeak_end\tLooping_prob\tTFs(binding prob)\n", Output_file_path)
-
+  
   TF_vector <- matrix(0, nrow(Candidate_circuits$TFs), ncol = 1)
   for (i in 1:nrow(Peak_Gene_index)) {
     TF_prob <- sort.int(Circuits_linkage_posterior$TF_Peak_Binding_prob[Peak_Gene_index[i, 1], ], decreasing = TRUE, index.return = TRUE)
     index <- which(TF_prob$x > prob_threshold_TF_peak_binding)
-
+    
     if (length(index) > 0) {
       circuit_flag[i] <- 1
-
-      cat(Candidate_circuits$Genes$Gene_symbols[Peak_Gene_index[i, 2]],
-        Candidate_circuits$Genes$chr[Peak_Gene_index[i, 2]],
-        Candidate_circuits$Genes$TSS[Peak_Gene_index[i, 2]],
-        Candidate_circuits$Peaks$chr[Peak_Gene_index[i, 1]],
-        Candidate_circuits$Peaks$point1[Peak_Gene_index[i, 1]],
-        Candidate_circuits$Peaks$point2[Peak_Gene_index[i, 1]],
-        Circuits_linkage_posterior$Peak_Gene_Looping_prob[Peak_Gene_index[i, 1], Peak_Gene_index[i, 2]],
-        file = Output_file_path, sep = "\t", append = TRUE
-      )
-
-      cat("\t", file = Output_file_path, append = TRUE)
-
+      
+      TFs_binding <- c()
       for (j in 1:length(index)) {
-        cat(paste(Candidate_circuits$TFs[TF_prob$ix[j], 2], ",(", TF_prob$x[j], "),", "sep" = ""), file = Output_file_path, sep = " ", append = TRUE)
-
+        TF_binding <- paste(Candidate_circuits$TFs[TF_prob$ix[j], 2], "(", TF_prob$x[j], ")", sep = "")
+        TFs_binding <- c(TFs_binding, TF_binding)
         TF_vector[TF_prob$ix[j]] <- TF_vector[TF_prob$ix[j]] + 1
       }
+      
+      # Add the row to the results data.frame
+      results <- rbind(
+        results,
+        data.frame(
+          Gene_symbol = Candidate_circuits$Genes$Gene_symbols[Peak_Gene_index[i, 2]],
+          Gene_chr = Candidate_circuits$Genes$chr[Peak_Gene_index[i, 2]],
+          Gene_TSS = Candidate_circuits$Genes$TSS[Peak_Gene_index[i, 2]],
+          Peak_chr = Candidate_circuits$Peaks$chr[Peak_Gene_index[i, 1]],
+          Peak_start = Candidate_circuits$Peaks$point1[Peak_Gene_index[i, 1]],
+          Peak_end = Candidate_circuits$Peaks$point2[Peak_Gene_index[i, 1]],
+          Looping_prob = Circuits_linkage_posterior$Peak_Gene_Looping_prob[Peak_Gene_index[i, 1], Peak_Gene_index[i, 2]],
+          TFs_binding_prob = paste(TFs_binding, collapse = ", "),
+          stringsAsFactors = FALSE
+        )
+      )
     }
-    cat("\n", file = Output_file_path, sep = "", append = TRUE)
   }
+  
+  # Write the data.frame to the output file
+  write.table(
+    results,
+    file = Output_file_path,
+    sep = "\t",
+    row.names = FALSE,
+    col.names = TRUE,
+    quote = FALSE
+  )
+  
   print(paste("MAGICAL selected regulatory circuits with", length(which(TF_vector > 1)), "TFs,", length(unique(Peak_Gene_index[circuit_flag > 0, 1])), "peaks, and", length(unique(Peak_Gene_index[circuit_flag > 0, 2])), "genes", sep = " "))
+  
+  # Return the results data.frame
+  return(results)
 }
