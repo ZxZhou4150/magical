@@ -313,7 +313,7 @@ aggregate_to_pb = function(meta, mtx){
 #' @import chromVARmotifs
 #'
 #' @export
-prepare_magical_object = function(deg, das, RNA_counts, ATAC_counts, niche_label, meta_add, to_file, Ref_seq_file_path, genome, meta_spot_opt = F, contrast = c("niche","condition"), niche1=NULL, niche2 = NULL, condition=NULL, condition1 = NULL, condition2 = NULL, feature, cl_method, mclust.num, ld.resolution, random.seed, ...){
+prepare_magical_object = function(deg, das, RNA_counts, ATAC_counts, niche_label, meta_add, to_file = F, Ref_seq_file_path, genome = "hg38", meta_spot_opt = F, contrast = c("niche","condition"), niche1=NULL, niche2 = NULL, condition=NULL, condition1 = NULL, condition2 = NULL, feature, cl_method, mclust.num, ld.resolution, random.seed, ...){
   ## extract spots to use
   if(contrast == "niche" & !is.null(niche2)){
     totake = which(niche_label %in% c(niche1, niche2))
@@ -342,9 +342,9 @@ prepare_magical_object = function(deg, das, RNA_counts, ATAC_counts, niche_label
   ## build MAGICAL object
   candidate_genes = data.frame(Gene_symbols = rownames(deg))
   
-  candidiate_peaks_char = rownames(das)
-  candidiate_peaks = do.call(rbind, strsplit(candidiate_peaks_char, "-"))
-  candidiate_peaks = data.frame(chr = candidiate_peaks[,1], point1 = as.numeric(candidiate_peaks[,2], point2 = as.numeric(candidate_peaks[,3])))
+  candidate_peaks_char = rownames(das)
+  candidate_peaks = do.call(rbind, strsplit(candidate_peaks_char, "-"))
+  candidate_peaks = data.frame(chr = candidate_peaks[,1], point1 = as.numeric(candidate_peaks[,2], point2 = as.numeric(candidate_peaks[,3])))
   
   RNA_count_mtx = as(RNA_counts, "TsparseMatrix")
   
@@ -353,17 +353,18 @@ prepare_magical_object = function(deg, das, RNA_counts, ATAC_counts, niche_label
   ATAC_count_mtx = as(ATAC_counts, "TsparseMatrix")
   
   ATAC_peaks_char = rownames(ATAC_counts)
-  ATAC_peaks = Signac::StringToGRanges(rownames(ATAC_peaks_char), sep = c(":", "-"))
+  ATAC_peaks = Signac::StringToGRanges(ATAC_peaks_char, sep = c(":", "-"))
   
-  Ref_seq = read.table(Ref_seq_file_path, header = TRUE, sep = "\t")
-  colnames(Ref_seq) = c("chr", "strand", "start", "end", "Gene_symbols")
+  Refseq = read.table(Ref_seq_file_path, header = TRUE, sep = "\t")
+  colnames(Refseq) = c("chr", "strand", "start", "end", "Gene_symbols")
   
   # get motifs with chromVARmotifs
-  cat("\n Getting motfis ... \n")
-  chromatinassay <- CreateChromatinAssay(counts = ATAC_counts, genome = genome)
-  object <- CreateSeuratObject(counts = chromatinassay)
-  object <- AddMotifs(object = object, genome = BSgenome.Hsapiens.UCSC.hg38, pfm = human_pwms_v2)
-  Peak_motif_mapping <- as(object@assays$ATAC@motifs@data * 1, "TsparseMatrix")
+  cat("\n Getting motfis. This step make take some time ... \n")
+  chromatinassay <- Signac::CreateChromatinAssay(counts = ATAC_counts, genome = genome)
+  object <- Seurat::CreateSeuratObject(counts = chromatinassay)
+  library("BSgenome.Hsapiens.UCSC.hg38") ###
+  object <- Signac::AddMotifs(object = object, genome = BSgenome.Hsapiens.UCSC.hg38, pfm = human_pwms_v2) ###this line need to be updated (e.g., if genome == "hg38", ...)
+  Peak_motif_mapping <- as(object@assays$RNA@motifs@data * 1, "TsparseMatrix")
   motif_mapping <- summary(Peak_motif_mapping)
   motifs <- Peak_motif_mapping@Dimnames[[2]]
   motifs <- sapply(motifs, function(x) {
@@ -375,7 +376,7 @@ prepare_magical_object = function(deg, das, RNA_counts, ATAC_counts, niche_label
     }
   }) # convert to gene names
   motifs <- cbind.data.frame(seq_len(length(motifs)), motifs)
-  colnames(Motifs) <- c("motif_index", "name")
+  colnames(motifs) <- c("motif_index", "name")
   
   ## Set metadata (RNA_cell and ATAC_cells) as indicated by meta_spot_opt
   if(meta_spot_opt == F){
@@ -399,7 +400,6 @@ prepare_magical_object = function(deg, das, RNA_counts, ATAC_counts, niche_label
     
     new_idents = metaspot_swk(clusters, feature, cl_method, mclust.num, ld.resolution, random.seed, ...)
     if(contrast == "niche"){
-      #### hierarchy: samplle, niche??
       RNA_cells = data.frame(cell_index = 1:ncol(RNA_counts), cell_barcode = colnames(RNA_counts), cell_type = niche_label, subject_ID = new_idents, condition = "1")
       ATAC_cells = data.frame(cell_index = 1:ncol(ATAC_counts), cell_barcode = colnames(ATAC_counts), cell_type = niche_label, subject_ID = new_idents, condition = "1")
     }else if(contrast == "condition"){
@@ -413,8 +413,8 @@ prepare_magical_object = function(deg, das, RNA_counts, ATAC_counts, niche_label
   if(to_file == T){
     cat("Writing files ...\n")
     if(!dir.exists("input files"))dir.create("input_files")
-    write.table(Candidate_Genes, file = "input files/Cell type candidate genes.txt", quote = F, row.names = F, col.names = F, sep = "\t")
-    write.table(Candidate_Peaks, file = "input files/Cell type candidate peaks.txt", quote = F, row.names = F, col.names = F, sep = "\t")
+    write.table(candidate_genes, file = "input files/Cell type candidate genes.txt", quote = F, row.names = F, col.names = F, sep = "\t")
+    write.table(candidate_peaks, file = "input files/Cell type candidate peaks.txt", quote = F, row.names = F, col.names = F, sep = "\t")
     write.table(summary(RNA_count_mtx), file = "input files/Cell type scRNA read count.txt", quote = FALSE, row.names = FALSE, col.names = FALSE, sep = "\t")
     write.table(RNA_genes, file = "input files/scRNA genes.txt", quote = F, col.names = F, sep = "\t")
     write.table(RNA_cells, file = "input files/Cell type scRNA cell meta.txt", quote = F, row.names = F, col.names = F, sep = "\t")
@@ -422,20 +422,20 @@ prepare_magical_object = function(deg, das, RNA_counts, ATAC_counts, niche_label
     write.table(ATAC_peaks, file = "input files/scATAC peaks.txt", quote = F, col.names = F, sep = "\t")
     write.table(ATAC_cells, file = "input files/Cell type scATAC cell meta.txt", quote = F, row.names = F, col.names = F, sep = "\t")
     write.table(motif_mapping, file = "input files/Motif mapping prior.txt", quote = F, row.names = F, col.names = F, sep = "\t")
-    write.table(Motifs, file = "input files/Motifs.txt", quote = F, row.names = F, col.names = F, sep = "\t")
+    write.table(motifs, file = "input files/Motifs.txt", quote = F, row.names = F, col.names = F, sep = "\t")
   }
   
   loaded_data = list(
     "Common_samples" = Common_samples,
-    "Candidate_Genes" = data.frame(candidate_Genes),
-    "Candidate_Peaks" = data.frame(candidate_Peaks),
+    "Candidate_Genes" = data.frame(candidate_genes),
+    "Candidate_Peaks" = data.frame(candidate_peaks),
     "scRNA_Genes" = data.frame(RNA_genes),
     "scRNA_cells" = data.frame(RNA_cells),
     "scRNA_read_count_matrix" = RNA_count_mtx,
     "scATAC_Peaks" = data.frame(ATAC_peaks),
     "scATAC_cells" = data.frame(ATAC_cells),
     "scATAC_read_count_matrix" = ATAC_count_mtx,
-    "Motifs" = data.frame(Motifs),
+    "Motifs" = data.frame(motifs),
     "TF_Peak_binding_matrix" = motif_mapping,
     "Refseq" = data.frame(Refseq)
   )
