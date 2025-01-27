@@ -18,7 +18,7 @@
 #' @param magical To perform downstream MAGICAL analysis or not. Default is `T`.
 #' @param Ref_seq_file_path Path to the Refseq file for transcription starting site extraction
 #' @param to_file Whether to write the MAGICAl inputs to files under the folder "input files".
-#' @param genome The genome for searching TF binding motifs. Default is `"hg38"`.
+#' @param genome The genome for searching TF binding motifs. A choice from "hg38", "hg19" and "mm10" (we don't support other genomes for now).
 #' @param meta_spot_opt To run MAGICAL at meta-spot level or not. Default is `F`.
 #' @param feature The features to be clustered. Can be LVs from DAVINCI, or spatial coordinates.
 #' @param cl_method A choice from "mclust" and "louvain". The clustering method.
@@ -32,7 +32,7 @@
 #' @param ... Other parameters
 #' 
 #' @return If `magical = F`: a list of filtered data.frame in the form of the result of `Seurat::FindMarkers()`. If `magical = T`: a list of 2 data.frames: 1 is the one above, the other is the output from `MAGICAL_circuits_output()`.
-wrapper_main = function(RNA_counts, ATAC_counts, niche_label, meta_add=NULL, pb, contrast = c("niche","condition"), niche1=NULL, niche2 = NULL, condition=NULL, condition1 = NULL, condition2 = NULL, p_thre = 0.05, log2fc_thre = 0.3, magical, to_file = F, Ref_seq_file_path, genome = "hg38", meta_spot_opt = F, feature,cl_method, mclust.num, ld.resolution, random.seed, TAD_file_path, dc = 5e5, iteration_num = 250, Output_file_path = 'MAGICAL_selected_regulatory_circuits.txt', ...){
+wrapper_main = function(RNA_counts, ATAC_counts, niche_label, meta_add=NULL, pb, contrast = c("niche","condition"), niche1=NULL, niche2 = NULL, condition=NULL, condition1 = NULL, condition2 = NULL, p_thre = 0.05, log2fc_thre = 0.3, magical, to_file = F, Ref_seq_file_path, genome = c("hg38","hg19","mm10"), meta_spot_opt = F, feature,cl_method, mclust.num, ld.resolution, random.seed, TAD_file_path, dc = 5e5, iteration_num = 250, Output_file_path = 'MAGICAL_selected_regulatory_circuits.txt', ...){
   ## step 1: differential analysis
   cat("Performing differential analysis ... \n")
   nsample = length(unique(obj$sample))
@@ -290,7 +290,7 @@ aggregate_to_pb = function(meta, mtx){
 #' @param meta_add Additional meta data to add to the Seurat object. Rownames must match colnames of the count matrices.
 #' @param to_file Whether to write the MAGICAl inputs to files under the folder "input files".
 #' @param Ref_seq_file_path Path to the Refseq file for transcription starting site extraction
-#' @param genome The genome for searching TF binding motifs. Default is `"hg38"`.
+#' @param genome The genome for searching TF binding motifs. A choice from "hg38", "hg19" and "mm10" (we don't support other genomes for now).
 #' @param meta_spot_opt To run MAGICAL at meta-spot level or not. Default is `F`.
 #' @param contrast Niche- or condition-specific contrast
 #' @param niche1 (Required for all cases) For `contrast = "niche"`, this should be one niche you want to contrast. For `contrast = "condition"`, this should be the niche in which you want to contrast the conditions
@@ -313,7 +313,7 @@ aggregate_to_pb = function(meta, mtx){
 #' @import chromVARmotifs
 #'
 #' @export
-prepare_magical_object = function(deg, das, RNA_counts, ATAC_counts, niche_label, meta_add, to_file = F, Ref_seq_file_path, genome = "hg38", meta_spot_opt = F, contrast = c("niche","condition"), niche1=NULL, niche2 = NULL, condition=NULL, condition1 = NULL, condition2 = NULL, feature, cl_method, mclust.num, ld.resolution, random.seed, ...){
+prepare_magical_object = function(deg, das, RNA_counts, ATAC_counts, niche_label, meta_add, to_file = F, Ref_seq_file_path, genome = c("hg38","hg19","mm10"), meta_spot_opt = F, contrast = c("niche","condition"), niche1=NULL, niche2 = NULL, condition=NULL, condition1 = NULL, condition2 = NULL, feature, cl_method, mclust.num, ld.resolution, random.seed, ...){
   ## extract spots to use
   if(contrast == "niche" & !is.null(niche2)){
     totake = which(niche_label %in% c(niche1, niche2))
@@ -362,8 +362,24 @@ prepare_magical_object = function(deg, das, RNA_counts, ATAC_counts, niche_label
   cat("\n Getting motfis. This step make take some time ... \n")
   chromatinassay <- Signac::CreateChromatinAssay(counts = ATAC_counts, genome = genome)
   object <- Seurat::CreateSeuratObject(counts = chromatinassay)
-  library("BSgenome.Hsapiens.UCSC.hg38") ###
-  object <- Signac::AddMotifs(object = object, genome = BSgenome.Hsapiens.UCSC.hg38, pfm = human_pwms_v2) ###this line need to be updated (e.g., if genome == "hg38", ...)
+  
+  print(paste0("The genome is: ", genome))
+  if (!require("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+  if(genome == "hg38"){
+    if(!require("BSgenome.Hsapiens.UCSC.hg38"))BiocManager::install("BSgenome.Hsapiens.UCSC.hg38")
+    library("BSgenome.Hsapiens.UCSC.hg38")
+    object <- Signac::AddMotifs(object = object, genome = BSgenome.Hsapiens.UCSC.hg38, pfm = human_pwms_v2)
+  }else if(genome == "hg19"){
+    if(!require("BSgenome.Hsapiens.UCSC.hg19"))BiocManager::install("BSgenome.Hsapiens.UCSC.hg19")
+    library("BSgenome.Hsapiens.UCSC.hg19")
+    object <- Signac::AddMotifs(object = object, genome = BSgenome.Hsapiens.UCSC.hg19, pfm = human_pwms_v2)
+  }else if(genome == "mm10"){
+    if(!require("BSgenome.Mmusculus.UCSC.mm10"))BiocManager::install("BSgenome.Mmusculus.UCSC.mm10")
+    library("BSgenome.Hsapiens.UCSC.hg19")
+    object <- Signac::AddMotifs(object = object, genome = BSgenome.Mmusculus.UCSC.mm10, pfm = mouse_pwms_v2)
+  }
+  
   Peak_motif_mapping <- as(object@assays$RNA@motifs@data * 1, "TsparseMatrix")
   motif_mapping <- summary(Peak_motif_mapping)
   motifs <- Peak_motif_mapping@Dimnames[[2]]
