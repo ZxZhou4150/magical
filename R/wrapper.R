@@ -32,6 +32,16 @@
 #' @param ... Other parameters
 #' 
 #' @return If `magical = F`: a list of filtered data.frame in the form of the result of `Seurat::FindMarkers()`. If `magical = T`: a list of 2 data.frames: 1 is the one above, the other is the output from `MAGICAL_circuits_output()`.
+#'
+#' @import Matrix
+#' @import dplyr
+#' @import Seurat
+#' @import Signac
+#' @import TFBSTools
+#' @import BSgenome.Hsapiens.UCSC.hg38
+#' @import chromVARmotifs
+#'
+#' @export
 wrapper_main = function(RNA_counts, ATAC_counts, niche_label, meta_add=NULL, pb, contrast = c("niche","condition"), niche1=NULL, niche2 = NULL, condition=NULL, condition1 = NULL, condition2 = NULL, p_thre = 0.05, log2fc_thre = 0.3, magical, to_file = F, Ref_seq_file_path, genome = c("hg38","hg19","mm10"), meta_spot_opt = F, feature,cl_method, mclust.num, ld.resolution, random.seed, TAD_file_path, dc = 5e5, iteration_num = 250, Output_file_path = 'MAGICAL_selected_regulatory_circuits.txt', ...){
   ## step 1: differential analysis
   cat("Performing differential analysis ... \n")
@@ -116,8 +126,8 @@ wrapper_main = function(RNA_counts, ATAC_counts, niche_label, meta_add=NULL, pb,
 #' 
 #' @return A list of filtered data.frames in the form of the result of `Seurat::FindMarkers()` 
 #'
-# #' @import Seurat
-# #' @import Signac
+#' @import Seurat
+#' @import Signac
 #' 
 #' @export
 differential = function(RNA_counts, ATAC_counts, niche_label, meta_add=NULL, pb, contrast = c("niche","condition"), niche1=NULL, niche2 = NULL, condition=NULL, condition1 = NULL, condition2 = NULL, p_thre = 0.05, log2fc_thre = 0.3, ...){
@@ -472,6 +482,9 @@ prepare_magical_object = function(deg, das, RNA_counts, ATAC_counts, niche_label
 #' 
 #' @return The return value of `MAGICAL_circuits_output()`.
 #' 
+#' @import Matrix
+#' @import dplyr
+#' 
 #' @export
 run_magical_main = function(loaded_data, TAD_file_path, dc = 5e5, iteration_num, Output_file_path = 'MAGICAL_selected_regulatory_circuits.txt',...){
   if(exists(TAD_file_path)){
@@ -488,7 +501,7 @@ run_magical_main = function(loaded_data, TAD_file_path, dc = 5e5, iteration_num,
 
 #' Functions for metaspot construction
 #' 
-#' Using `DAVINCI::swk()`
+#' Using `DAVINCHI::swk()`
 #' 
 #' @param clusters The labels of the spots
 #' @param feature The features to be clustered. Can be LVs from DAVINCI, or spatial coordinates.
@@ -496,7 +509,7 @@ run_magical_main = function(loaded_data, TAD_file_path, dc = 5e5, iteration_num,
 #' @param mclust.num If `method = "mclust`, this is the number of clusters.
 #' @param ld.resolution If `method = "louvain"`, this is the resolution parameter.
 #' @param random.seed Random seed.
-#' @param ... Other parameters required by `DAVINCI::swk()`.
+#' @param ... Other parameters required by `DAVINCHI::swk()`.
 #' 
 #' @export
 metaspot_swk = function(clusters, feature, cl_method = c("mclust", "louvain"), mclust.num = NULL, ld.resolution = NULL, random.seed = 1, ...) {
