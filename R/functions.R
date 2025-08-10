@@ -696,7 +696,7 @@ TF_peak_binding_B_sampling <- function(A, A_sample, ATAC_Cell_Sample_vector, TFA
   for (s in 1:S) {
   totake <- which(ATAC_Cell_Sample_vector == s)
   if (length(totake) == 1) {
-    T_sample[, s] <- TFA$T_sample[, totake]
+    T_sample[, s] <- TFA$T_A[, totake]
   }else{
     T_sample[, s] <- rowMeans(TFA$T_A[, totake])
   }
