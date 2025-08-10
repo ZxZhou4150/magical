@@ -726,7 +726,7 @@ Peak_gene_looping_L_samping <- function(R, R_sample, RNA_Cell_Sample_vector, TFA
   for (s in 1:S) {
     totake <- which(RNA_Cell_Sample_vector == s)
     if (length(totake) == 1) {
-      T_sample[, s] <- TFA$T_sample[, totake]}
+      T_sample[, s] <- TFA$T_R[, totake]}
     else{
       T_sample[, s] <- rowMeans(TFA$T_R[, totake])
     }
