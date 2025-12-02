@@ -170,3 +170,16 @@ res = MAGICAL_circuits_output(
 )
 ```
 
+
+## Tricks to work on Bulk data
+MAGICAL is designed for single cell multiomics data. However, it can also be applied to bulk data with some tricks. For bulk RNA-seq and ATAC-seq data from multiple samples/subjects under two conditions, we can treat each sample/subject as a "cell" in MAGICAL. You don't need to change anything in your data or any code above, just to make sure you have the cell meta file which looks like this:
+
+| cell index | cell barcode | cell type label | sample/subject ID | condition |
+|------------|--------------|-----------------|-------------------|-----------|
+| 1          | Sample_1     | Cell_type_A     | Sample_1          | Control   |
+| 2          | Sample_2     | Cell_type_A     | Sample_2          | Control   |
+| 3          | Sample_3     | Cell_type_A     | Sample_3          | Disease   |
+| 4          | Sample_4     | Cell_type_A     | Sample_4          | Disease   |
+| ...        | ...          | ...             | ...               | ...       |
+
+where `cell index`, `cell barcode`, and `cell type label` can be arbitrary values as long as they are consistent with your read count files (`cell type label` should be the same for all samples). `sample/subject ID` should be unique for each sample/subject and `condition` indicates the group information.
