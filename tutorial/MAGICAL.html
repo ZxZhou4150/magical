@@ -582,6 +582,76 @@ the nature of Bayesian algorithm.</p>
 <div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a><span class="fu">res = MAGICAL_circuits_output</span>(<span class="at">Output_file_path =</span> <span class="st">&#39;MAGICAL_selected_regulatory_circuits.txt&#39;</span>, </span>
 <span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a>                        Candidate_circuits, Circuits_linkage_posterior)</span>
 <span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a><span class="co">#&gt; [1] &quot;MAGICAL selected regulatory circuits with 93 TFs, 373 peaks, and 298 genes&quot;</span></span></code></pre></div>
+  </div>
+<div id="tricks-to-work-on-bulk-data" class="section level2">
+<h2>Tricks to work on Bulk data</h2>
+<p>MAGICAL is designed for single cell multiomics data. However, it can
+also be applied to bulk data with some tricks. For bulk RNA-seq and
+ATAC-seq data from multiple samples/subjects under two conditions, we
+can treat each sample/subject as a “cell” in MAGICAL. You don’t need to
+change anything in your data or any code above, just to make sure you
+have the cell meta file which looks like this:</p>
+<table style="width:100%;">
+<colgroup>
+<col width="16%" />
+<col width="19%" />
+<col width="23%" />
+<col width="26%" />
+<col width="15%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>cell index</th>
+<th>cell barcode</th>
+<th>cell type label</th>
+<th>sample/subject ID</th>
+<th>condition</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td>Sample_1</td>
+<td>Cell_type_A</td>
+<td>Sample_1</td>
+<td>Control</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>Sample_2</td>
+<td>Cell_type_A</td>
+<td>Sample_2</td>
+<td>Control</td>
+</tr>
+<tr class="odd">
+<td>3</td>
+<td>Sample_3</td>
+<td>Cell_type_A</td>
+<td>Sample_3</td>
+<td>Disease</td>
+</tr>
+<tr class="even">
+<td>4</td>
+<td>Sample_4</td>
+<td>Cell_type_A</td>
+<td>Sample_4</td>
+<td>Disease</td>
+</tr>
+<tr class="odd">
+<td>…</td>
+<td>…</td>
+<td>…</td>
+<td>…</td>
+<td>…</td>
+</tr>
+</tbody>
+</table>
+<p>where <code>cell index</code>, <code>cell barcode</code>, and
+<code>cell type label</code> can be arbitrary values as long as they are
+consistent with your read count files (<code>cell type label</code>
+should be the same for all samples). <code>sample/subject ID</code>
+should be unique for each sample/subject and <code>condition</code>
+indicates the group information.</p>
 </div>
 </div>
 
