@@ -156,6 +156,9 @@ Data_loading <- function(Candidate_Gene_file_path, Candidate_Peak_file_path,
 #'
 #' @param loaded_data The output from `Data_loading`
 #' @param TAD_file_path The path to the TAD prior file
+#' @param TF_pct_in_candidate_Peaks_cutoff Parameter to select TFs. TFs that bind to more than this percentage of all peaks will be selected. Default is 0.05.
+#' @param TF_num_cutoff Parameter to select TFs. TFs that bind to more than this number of peaks will be selected. Default is 30.
+#' @param TF_enrichment_FC_cutoff Parameter to select TFs. TFs that are enriched in candidate peaks with fold change (not log fold change!) higher than this cutoff will be selected. Default is 0.8.
 #'
 #' @return A list named "Candidate_circuits" containing the following elements:
 #' * TFs: candidate TFs
@@ -172,7 +175,7 @@ Data_loading <- function(Candidate_Gene_file_path, Candidate_Peak_file_path,
 #'
 #' @export
 
-Candidate_circuits_construction_with_TAD <- function(loaded_data, TAD_file_path) {
+Candidate_circuits_construction_with_TAD <- function(loaded_data, TAD_file_path, TF_pct_in_candidate_Peaks_cutoff = 0.05, TF_num_cutoff = 30, TF_enrichment_FC_cutoff = 0.8) {
   Common_samples <- loaded_data$Common_samples
   Candidate_Genes <- loaded_data$Candidate_Genes
   Candidate_Peaks <- loaded_data$Candidate_Peaks
@@ -202,14 +205,16 @@ Candidate_circuits_construction_with_TAD <- function(loaded_data, TAD_file_path)
   index <- match(Candidate_Peaks$Peak_index, scATAC_Peaks$Peak_index)
   Candidate_TF_Peak_Binding <- TF_Peak_binding_matrix[index, ]
   TF_num <- colSums(Candidate_TF_Peak_Binding)
-  TF_pct_in_candidate_Peaks <- colSums(Candidate_TF_Peak_Binding) / nrow(Candidate_Peaks)
+  TF_pct_in_candidate_Peaks <- TF_num / nrow(Candidate_Peaks)
   TF_pct_in_all_Peaks <- colSums(TF_Peak_binding_matrix) / nrow(scATAC_Peaks)
   TF_enrichment_FC <- TF_pct_in_candidate_Peaks / TF_pct_in_all_Peaks
-  TF_index <- which(TF_pct_in_candidate_Peaks > 0.05 & TF_num > 30 & TF_enrichment_FC > 0.8)
+  TF_index <- which(TF_pct_in_candidate_Peaks > TF_pct_in_candidate_Peaks_cutoff & TF_num > TF_num_cutoff & TF_enrichment_FC > TF_enrichment_FC_cutoff)
   if (length(TF_index) == 0) {
-    stop("Too few Peaks with TF binding sites. MAGICAL not applicable to this cell type!")
+    stop("No TFs meet the criteria. Please adjust TF parameters.")
 
   } else {
+    print(paste0(length(TF_index), " candidate TFs selected.\n
+                 Please adjust TF parameters if too few/many TFs are selected."))
     Candidate_TFs <- Motifs[TF_index, ]
     Candidate_TF_Peak_Binding <- Candidate_TF_Peak_Binding[, TF_index]
   }
@@ -371,6 +376,9 @@ Candidate_circuits_construction_with_TAD <- function(loaded_data, TAD_file_path)
 #'
 #' @param loaded_data The output from `Data_loading`
 #' @param distance_control Bp threshold for paring peaks and genes
+#' @param TF_pct_in_candidate_Peaks_cutoff Parameter to select TFs. TFs that bind to more than this percentage of all peaks will be selected. Default is 0.05.
+#' @param TF_num_cutoff Parameter to select TFs. TFs that bind to more than this number of peaks will be selected. Default is 30.
+#' @param TF_enrichment_FC_cutoff Parameter to select TFs. TFs that are enriched in candidate peaks with fold change (not log fold change!) higher than this cutoff will be selected. Default is 0.8.
 #'
 #' @return A list named "Candidate_circuits" containing the following elements:
 #' * TFs: candidate TFs
@@ -386,7 +394,7 @@ Candidate_circuits_construction_with_TAD <- function(loaded_data, TAD_file_path)
 #' @importFrom Matrix colSums rowSums sparseMatrix as.matrix
 #'
 #' @export
-Candidate_circuits_construction_without_TAD <- function(loaded_data, distance_control) {
+Candidate_circuits_construction_without_TAD <- function(loaded_data, distance_control, TF_pct_in_candidate_Peaks_cutoff = 0.05, TF_num_cutoff = 30, TF_enrichment_FC_cutoff = 0.8) {
   Common_samples <- loaded_data$Common_samples
   Candidate_Genes <- loaded_data$Candidate_Genes
   Candidate_Peaks <- loaded_data$Candidate_Peaks
@@ -411,13 +419,15 @@ Candidate_circuits_construction_without_TAD <- function(loaded_data, distance_co
   index <- match(Candidate_Peaks$Peak_index, scATAC_Peaks$Peak_index)
   Candidate_TF_Peak_Binding <- TF_Peak_binding_matrix[index, ]
   TF_num <- colSums(Candidate_TF_Peak_Binding)
-  TF_pct_in_candidate_Peaks <- colSums(Candidate_TF_Peak_Binding) / nrow(Candidate_Peaks)
+  TF_pct_in_candidate_Peaks <- TF_num / nrow(Candidate_Peaks)
   TF_pct_in_all_Peaks <- colSums(TF_Peak_binding_matrix) / nrow(scATAC_Peaks)
   TF_enrichment_FC <- TF_pct_in_candidate_Peaks / TF_pct_in_all_Peaks
-  TF_index <- which(TF_pct_in_candidate_Peaks > 0.05 & TF_num > 30 & TF_enrichment_FC > 0.8)
+  TF_index <- which(TF_pct_in_candidate_Peaks > TF_pct_in_candidate_Peaks_cutoff & TF_num > TF_num_cutoff & TF_enrichment_FC > TF_enrichment_FC_cutoff)
   if (length(TF_index) == 0) {
-    stop("Too few Peaks with TF binding sites. MAGICAL not applicable to this cell type!")
+    stop("No TFs meet the criteria. Please adjust TF parameters.")
   } else {
+    print(paste0(length(TF_index), " candidate TFs selected.\n
+                 Please adjust TF parameters if too few/many TFs are selected."))
     Candidate_TFs <- Motifs[TF_index, ]
     Candidate_TF_Peak_Binding <- Candidate_TF_Peak_Binding[, TF_index]
   }
