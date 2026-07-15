@@ -18,3 +18,7 @@ Imports:
     graphics,
     karyoploteR,
     regioneR
+Suggests:
+    Seurat,
+    SeuratObject,
+    Signac
